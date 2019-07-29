@@ -65,9 +65,8 @@ func process(msg []byte) {
 	update = time.Now().Unix()
 	mutex.Unlock()
 
-	testResult := new(test.Result)
-
-	if err := json.Unmarshal(msg, testResult); err != nil {
+	testResult, err := test.ResultFromJSON(msg)
+	if err != nil {
 		panic(err)
 	}
 

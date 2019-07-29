@@ -17,7 +17,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/skx/overseer/test"
@@ -62,9 +61,8 @@ The failure was:
 // a test-failure.
 //
 func process(msg []byte) {
-	testResult := new(test.Result)
-
-	if err := json.Unmarshal(msg, testResult); err != nil {
+	testResult, err := test.ResultFromJSON(msg)
+	if err != nil {
 		panic(err)
 	}
 

@@ -17,7 +17,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
@@ -43,9 +42,8 @@ var redisPass *string
 // a test-failure.
 //
 func process(msg []byte) {
-	testResult := new(test.Result)
-
-	if err := json.Unmarshal(msg, testResult); err != nil {
+	testResult, err := test.ResultFromJSON(msg)
+	if err != nil {
 		panic(err)
 	}
 
