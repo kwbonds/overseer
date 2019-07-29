@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/skx/overseer/test"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -42,27 +43,20 @@ var redisPass *string
 // a test-failure.
 //
 func process(msg []byte) {
-	data := map[string]string{}
+	testResult := new(test.Result)
 
-	if err := json.Unmarshal(msg, &data); err != nil {
+	if err := json.Unmarshal(msg, testResult); err != nil {
 		panic(err)
 	}
 
 	//
 	// If the test passed then we don't care.
 	//
-	result := data["error"]
-	if result == "" {
+	if testResult.Error == nil {
 		return
 	}
 
-	jsonStr, err := json.Marshal(data)
-	if err != nil {
-		fmt.Printf("Failed to marshal task result: %s\n", err.Error())
-		return
-	}
-
-	res, err := http.Post(*webhookURL, "application/json", bytes.NewBuffer(jsonStr))
+	res, err := http.Post(*webhookURL, "application/json", bytes.NewBuffer(msg))
 	if err != nil {
 		fmt.Printf("Failed to execute webhook request: %s\n", err.Error())
 		return

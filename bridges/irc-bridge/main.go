@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/skx/overseer/test"
 	"net/url"
 	"os"
 	"sync"
@@ -60,20 +61,16 @@ var redisPass *string
 // a test-failure.
 //
 func process(msg []byte) {
-	data := map[string]string{}
+	testResult := new(test.Result)
 
-	if err := json.Unmarshal(msg, &data); err != nil {
+	if err := json.Unmarshal(msg, testResult); err != nil {
 		panic(err)
 	}
-
-	testType := data["type"]
-	testTarget := data["target"]
-	result := data["error"]
 
 	//
 	// Bump our pass/fail counts.
 	//
-	if result == "" {
+	if testResult.Error == nil {
 		mutex.Lock()
 		passed++
 		mutex.Unlock()
@@ -86,14 +83,14 @@ func process(msg []byte) {
 	//
 	// If the test passed then we don't care.
 	//
-	if result == "" {
+	if testResult.Error == nil {
 		return
 	}
 
 	//
 	// Format the failure message.
 	//
-	txt := fmt.Sprintf("The %s test against %s failed: %s", testType, testTarget, result)
+	txt := fmt.Sprintf("The %s test against %s failed: %s", testResult.Type, testResult.Target, *testResult.Error)
 
 	//
 	// And send it.

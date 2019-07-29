@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/skx/overseer/protocols"
 	"github.com/skx/overseer/test"
@@ -331,13 +332,27 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 	//
 	for arg, val := range result.Arguments {
 
+		switch arg {
 		// Is there a custom per-test override?
-		if arg == "maxRetries" {
+		case "maxRetries":
 			maxRetries, err := strconv.ParseInt(val, 10, 32)
 			if err != nil {
 				return result, fmt.Errorf("Non-numeric argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
 			}
 			result.MaxRetries = int(maxRetries)
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+
+			// Do not re-trigger same errors for the specified amount of time, or until test succeeds again
+		case "deduplicateFor":
+			duration, err := time.ParseDuration(val)
+			if err != nil {
+				return result, fmt.Errorf("Non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			}
+
+			result.DeduplicationDuration = &duration
 
 			// We don't want to pass a non-test var to the actual test
 			delete(result.Arguments, arg)
