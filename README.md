@@ -1,7 +1,9 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/skx/overseer)](https://goreportcard.com/report/github.com/skx/overseer)
-[![license](https://img.shields.io/github/license/skx/overseer.svg)](https://github.com/skx/overseer/blob/master/LICENSE)
-[![Release](https://img.shields.io/github/release/skx/overseer.svg)](https://github.com/skx/overseer/releases/latest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cmaster11/overseer)](https://goreportcard.com/report/github.com/cmaster11/overseer)
+[![license](https://img.shields.io/github/license/cmaster11/overseer.svg)](https://github.com/cmaster11/overseer/blob/master/LICENSE)
 
+# DISCLAIMER
+
+This project is a heavily modified version of the amazing [skx/overseer](https://github.com/skx/overseer), compatibility between the two projects's data is not guaranteed, and should not be expected.
 
 Table of Contents
 =================
@@ -35,6 +37,7 @@ Overseer is a simple and scalable [golang](https://golang.org/)-based remote pro
    * Requests may be DELETE, GET, HEAD, POST, PATCH, POST, & etc.
    * SSL certificate validation and expiration warnings are supported.
 * IMAP & IMAPS
+* Kubernetes service
 * MySQL
 * NNTP
 * ping / ping6
@@ -44,6 +47,7 @@ Overseer is a simple and scalable [golang](https://golang.org/)-based remote pro
 * rsync
 * SMTP
 * SSH
+* SSL
 * Telnet
 * VNC
 * XMPP
@@ -62,22 +66,9 @@ All protocol-tests transparently support testing IPv4 and IPv6 targets, although
 
 
 
-## Installation & Dependencies
+## Installation
 
-There are two ways to install this project from source, which depend on the version of the [go](https://golang.org/) version you're using.
-
-If you just need the binaries you can find them upon the [project release page](https://github.com/skx/overseer/releases).
-
-
-### Source Installation go <=  1.11
-
-If you're using `go` before 1.11 then the following command should fetch/update `overseer`, and install it upon your system:
-
-     $ go get -u github.com/skx/overseer
-
-### Source installation go  >= 1.12
-
-If you're using a more recent version of `go` (which is _highly_ recommended), you need to clone to a directory which is not present upon your `GOPATH`:
+To install locally the project:
 
     git clone https://github.com/skx/overseer
     cd overseer
@@ -174,9 +165,7 @@ retry-logic via the command-line flag `-retry=false`.
 
 The result of each test is submitted to the central redis-host, from where it can be pulled and used to notify a human of a problem.
 
-Sample result-processors are [included](bridges/) in this repository which post
-test-results to a [purppura instance](https://github.com/skx/purppura), via
-email, or by posting a message to an IRC channel.
+Sample result-processors are [included](bridges/) in this repository which post test-results to a [purppura instance](https://github.com/skx/purppura), via [webhook](bridges/webhook-bridge/main.go) (e.g. to trigger notifications with [Notify17](https://notify17.net), via email, or by posting a message to an IRC channel.
 
 The sample bridges are primarily included for demonstration purposes, the
 expectation is you'll prefer to process the results and issue notifications to
@@ -191,14 +180,15 @@ You can check the size of the results set at any time via `redis-cli` like so:
 
 The JSON object used to describe each test-result has the following fields:
 
-| Field Name | Field Value                                                     |
-| ---------- | --------------------------------------------------------------- |
-| `input`    | The input as read from the configuration-file.                  |
-| `result`   | Either `passed` or `failed`.                                    |
-| `error`    | If the test failed this will explain why.                       |
-| `time`     | The time the result was posted, in seconds past the epoch.      |
-| `target`   | The target of the test, either an IPv4 address or an IPv6 one.  |
-| `type`     | The type of test (ssh, ftp, etc).                               |
+| Field Name | Field Value                                                                              |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `input`    | The input as read from the configuration-file.                                           |
+| `error`    | If the test failed this will explain why, otherwise it will be null.                     /
+| `time`     | The time the result was posted, in seconds past the epoch.                               |
+| `target`   | The target of the test, either an IPv4 address or an IPv6 one.                           |
+| `type`     | The type of test (ssh, ftp, etc).                                                        |
+| `isDedup`  / If true, the alert is a duplicate of a previously triggered one (see [#deduplication]).  |
+| `recovered`| If true, the alert has recovered from a previous error (see [#deduplication]).           |
 
 **NOTE**: The `input` field will be updated to mask any password options which have been submitted with the tests.
 
@@ -214,7 +204,21 @@ As mentioned this repository contains some demonstration "[bridges](bridges/)", 
   * This forwards each test-result to a [purppura host](https://github.com/skx/purppura/).
 * `webhook-bridge/main.go`
   * Forwards each test-result to a generic URL (e.g. to trigger notifications with [Notify17](https://notify17.net)). 
+  
+## Deduplication
 
+**Disclaimer**: deduplication has been fully developed only for the [webhook](bridges/webhook-bridge/main.go) bridge.
+
+It is possible to enable the deduplication of alerts by using the `with dedup 5m` rule, or by starting `overseer worker` with the `-dedup=5m` flag.
+
+What deduplication does is:
+
+- When an alert gets triggered because of an error:
+  - Calculates a unique hash for the generated alert, based on the input rule.
+  - If the alert has been already generated in the past, closer than the period of time specified (e.g. `5m` for 5 minutes), a new alert will NOT be triggered.
+  - If the alert has been already generated in the past, but enough time has passed (e.g. > 5 min ago), a new alert will be generated, and will carry the `isDedup` flag set to `true`.
+- When a test succeeds, after having failed in the past:
+  - A new alert will be generated, having `error` set to `null` and `recovered` set to `true`.
 
 ## Metrics
 
@@ -255,17 +259,5 @@ You can examine the length of either queue via the [llen](https://redis.io/comma
    * Or to view just the count
       * `redis-cli llen overseer.results`
 
-
-## Github Setup
-
-This repository is configured to run tests upon every commit, and when
-pull-requests are created/updated.  The testing is carried out via
-[.github/run-tests.sh](.github/run-tests.sh) which is used by the
-[github-action-tester](https://github.com/skx/github-action-tester) action.
-
-Releases are automated in a similar fashion via [.github/build](.github/build),
-and the [github-action-publish-binaries](https://github.com/skx/github-action-publish-binaries) action.
-
-
-Steve
+Alberto (all original source credits to [skx](https://github.com/skx))
 --
