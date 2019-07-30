@@ -178,15 +178,15 @@ You can check the size of the results set at any time via `redis-cli` like so:
 
 The JSON object used to describe each test-result has the following fields:
 
-| Field Name | Field Value                                                                              |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| `input`    | The input as read from the configuration-file.                                           |
-| `error`    | If the test failed this will explain why, otherwise it will be null.                     |
-| `time`     | The time the result was posted, in seconds past the epoch.                               |
-| `target`   | The target of the test, either an IPv4 address or an IPv6 one.                           |
-| `type`     | The type of test (ssh, ftp, etc).                                                        |
-| `isDedup`  | If true, the alert is a duplicate of a previously triggered one (see [#deduplication]).  |
-| `recovered`| If true, the alert has recovered from a previous error (see [#deduplication]).           |
+| Field Name | Field Value                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| `input`    | The input as read from the configuration-file.                                                           |
+| `error`    | If the test failed this will explain why, otherwise it will be null.                                     |
+| `time`     | The time the result was posted, in seconds past the epoch.                                               |
+| `target`   | The target of the test, either an IPv4 address or an IPv6 one.                                           |
+| `type`     | The type of test (ssh, ftp, etc).                                                                        |
+| `isDedup`  | If true, the alert is a duplicate of a previously triggered one (see [deduplication](#deduplication)).   |
+| `recovered`| If true, the alert has recovered from a previous error (see [deduplication](#deduplication)).            |
 
 **NOTE**: The `input` field will be updated to mask any password options which have been submitted with the tests.
 
