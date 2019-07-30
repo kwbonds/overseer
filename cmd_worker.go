@@ -202,7 +202,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 }
 
 // notify is used to store the result of a test in our redis queue.
-func (p *workerCmd) notify(test test.Test, result error) error {
+func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 
 	//
 	// If we don't have a redis-server then return immediately.
@@ -217,29 +217,66 @@ func (p *workerCmd) notify(test test.Test, result error) error {
 	//
 	// The message we'll publish will be a JSON hash
 	//
-	msg := map[string]string{
-		"input":  test.Input,
-		"result": "passed",
-		"target": test.Target,
-		"time":   fmt.Sprintf("%d", time.Now().Unix()),
-		"type":   test.Type,
-		"tag":    p.Tag,
+	testResult := &test.Result{
+		Input:  testDefinition.Input,
+		Target: testDefinition.Target,
+		Time:   time.Now().Unix(),
+		Type:   testDefinition.Type,
+		Tag:    p.Tag,
 	}
-
 	//
 	// Was the test result a failure?  If so update the object
 	// to contain the failure-message, and record that it was
 	// a failure rather than the default pass.
 	//
-	if result != nil {
-		msg["result"] = "failed"
-		msg["error"] = result.Error()
+	if resultError != nil {
+		errorString := resultError.Error()
+		testResult.Error = &errorString
+	}
+
+	// If test has a deduplication rule, avoid re-triggering a notification if not needed, or clean the dedup cache if needed
+	if testDefinition.DeduplicationDuration != nil {
+
+		hash := testResult.Hash()
+		dedupCacheTime := p.getDeduplicationCacheTime(hash)
+		if testResult.Error != nil {
+
+			// Save the current notification time
+			p.setDeduplicationCacheTime(hash, *testDefinition.DeduplicationDuration)
+
+			// With dedup, we don't want to trigger same notification again if not needed
+			if dedupCacheTime != nil {
+				now := time.Now().Unix()
+				diff := now - *dedupCacheTime
+				dedupDurationSeconds := int64(*testDefinition.DeduplicationDuration / time.Second)
+
+				if diff < dedupDurationSeconds {
+					// There is no need to trigger the notification, because not enough time has passed since the last one
+					p.verbose(fmt.Sprintf("Skipping notification (dedup, last notif %s ago) for test `%s` (%s)\n",
+						(time.Duration(diff) * time.Second).String(),
+						testDefinition.Input, testDefinition.Target))
+					return nil
+				}
+			}
+
+		} else {
+
+			// Clear any dedup cache, because the test has passed
+			p.clearDeduplicationCacheTime(hash)
+
+			// If there was a dedup cache time, we can mark this test as recovered
+			if dedupCacheTime != nil {
+				testResult.RecoveredFromError = true
+			}
+
+		}
+
 	}
 
 	//
-	// Convert the MAP to a JSON string we can notify.
+	// Convert the test result to a JSON string we can notify.
 	//
-	j, err := json.Marshal(msg)
+	j, err := json.Marshal(testResult)
 	if err != nil {
 		fmt.Printf("Failed to encode test-result to JSON: %s", err.Error())
 		return err
@@ -255,6 +292,60 @@ func (p *workerCmd) notify(test test.Test, result error) error {
 	}
 
 	return nil
+}
+
+func (p *workerCmd) getDeduplicationCacheKey(hash string) string {
+	return fmt.Sprintf("overseer.dedup-cache.%s", hash)
+}
+
+func (p *workerCmd) getDeduplicationCacheTime(hash string) *int64 {
+	if p._r == nil {
+		return nil
+	}
+
+	cacheKey := p.getDeduplicationCacheKey(hash)
+	cacheTime, err := p._r.Get(cacheKey).Int64()
+	if err != nil {
+		if err == redis.Nil {
+			// Key just does not exist
+			return nil
+		}
+
+		fmt.Printf("Failed to get dedup cache key: %s\n", err)
+		return nil
+	}
+
+	return &cacheTime
+}
+
+func (p *workerCmd) setDeduplicationCacheTime(hash string, expiry time.Duration) {
+	if p._r == nil {
+		return
+	}
+
+	cacheKey := p.getDeduplicationCacheKey(hash)
+	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
+	if err != nil {
+		fmt.Printf("Failed to set dedup cache key: %s\n", err)
+		return
+	}
+
+	return
+}
+
+func (p *workerCmd) clearDeduplicationCacheTime(hash string) {
+	if p._r == nil {
+		return
+	}
+
+	cacheKey := p.getDeduplicationCacheKey(hash)
+	_, err := p._r.Del(cacheKey).Result()
+	if err != nil {
+		fmt.Printf("Failed to clear dedup cache key: %s\n", err)
+		return
+	}
+
+	return
 }
 
 // alphaNumeric removes all non alpha-numeric characters from the

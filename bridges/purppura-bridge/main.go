@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/skx/overseer/test"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -64,42 +65,37 @@ func process(msg []byte) {
 	update = time.Now().Unix()
 	mutex.Unlock()
 
-	data := map[string]string{}
-
-	if err := json.Unmarshal(msg, &data); err != nil {
+	testResult, err := test.ResultFromJSON(msg)
+	if err != nil {
 		panic(err)
 	}
-
-	testType := data["type"]
-	testTarget := data["target"]
-	input := data["input"]
 
 	//
 	// We need a stable ID for each test - get one by hashing the
 	// complete input-line and the target we executed against.
 	//
 	hasher := sha1.New()
-	hasher.Write([]byte(testTarget))
-	hasher.Write([]byte(input))
+	hasher.Write([]byte(testResult.Target))
+	hasher.Write([]byte(testResult.Input))
 	hash := hex.EncodeToString(hasher.Sum(nil))
 
 	//
 	// Populate the default fields.
 	//
 	values := map[string]string{
-		"detail":  fmt.Sprintf("<p>The <code>%s</code> test against <code>%s</code> passed.</p>", testType, testTarget),
+		"detail":  fmt.Sprintf("<p>The <code>%s</code> test against <code>%s</code> passed.</p>", testResult.Type, testResult.Target),
 		"id":      hash,
 		"raise":   "clear",
-		"subject": input,
+		"subject": testResult.Input,
 	}
 
 	//
 	// If the test failed we'll update the detail and trigger a raise
 	//
-	if data["error"] != "" {
+	if testResult.Error != nil {
 		values["detail"] =
 			fmt.Sprintf("<p>The <code>%s</code> test against <code>%s</code> failed:</p><p><pre>%s</pre></p>",
-				testType, testTarget, data["error"])
+				testResult.Type, testResult.Target, *testResult.Error)
 		values["raise"] = "now"
 	}
 

@@ -17,9 +17,9 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/skx/overseer/test"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -61,17 +61,15 @@ The failure was:
 // a test-failure.
 //
 func process(msg []byte) {
-	data := map[string]string{}
-
-	if err := json.Unmarshal(msg, &data); err != nil {
+	testResult, err := test.ResultFromJSON(msg)
+	if err != nil {
 		panic(err)
 	}
 
 	//
 	// If the test passed then we don't care.
 	//
-	result := data["error"]
-	if result == "" {
+	if testResult.Error == nil {
 		return
 	}
 
@@ -94,10 +92,10 @@ func process(msg []byte) {
 	var x TemplateParms
 	x.To = *email
 	x.From = *email
-	x.Type = data["type"]
-	x.Target = data["target"]
-	x.Input = data["input"]
-	x.Failure = result
+	x.Type = testResult.Type
+	x.Target = testResult.Target
+	x.Input = testResult.Input
+	x.Failure = *testResult.Error
 
 	//
 	// Render our template into a buffer.
