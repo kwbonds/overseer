@@ -137,6 +137,7 @@ func (p *enqueueCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		//
 		if err != nil {
 			fmt.Printf("Error parsing file: %s\n", err.Error())
+			return subcommands.ExitFailure
 		}
 
 		// Did we read from stdin?

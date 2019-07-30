@@ -263,8 +263,6 @@ func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 				diffLastAlert := now - *lastAlertTime
 				dedupDurationSeconds := int64(*testDefinition.DedupDuration / time.Second)
 
-				// We could wait for it to expire in Redis, but rules may also be enqueued with different dedup duration
-				// at runtime
 				if diffLastAlert < dedupDurationSeconds {
 					// There is no need to trigger the notification, because not enough time has passed since the last one
 					p.verbose(fmt.Sprintf("Skipping notification (dedup, last notif %s ago) for test `%s` (%s)\n",
@@ -272,9 +270,12 @@ func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 						testDefinition.Input, testDefinition.Target))
 					return nil
 				}
+
+				// Let the user know that the generated notification is a duplicate
+				testResult.IsDedup = true
 			}
 
-			p.setDeduplicationLastAlertTime(hash, *testDefinition.DedupDuration)
+			p.setDeduplicationLastAlertTime(hash, *testDefinition.DedupDuration*10)
 
 		} else {
 			// Check if a dedup was happening

@@ -16,8 +16,13 @@ type Result struct {
 	Tag    string `json:"tag"`
 
 	// If not nil, test has failed
-	Error     *string `json:"error"`
-	Recovered bool    `json:"recovered"`
+	Error *string `json:"error"`
+
+	// If true, this alert is a duplicate of an ongoing alert
+	IsDedup bool `json:"isDedup"`
+
+	// If true, this alert has recovered from a previous error
+	Recovered bool `json:"recovered"`
 }
 
 // Generated a unique identifier for the original test (e.g. to deduplicate same results)
