@@ -3,8 +3,9 @@ package test
 import (
 	"encoding/json"
 	"errors"
-	"github.com/skx/overseer/utils"
 	"strconv"
+
+	"github.com/skx/overseer/utils"
 )
 
 type Result struct {
@@ -15,7 +16,8 @@ type Result struct {
 	Tag    string `json:"tag"`
 
 	// If not nil, test has failed
-	Error *string `json:"error"`
+	Error              *string `json:"error"`
+	RecoveredFromError bool    `json:"recoveredFromError"`
 }
 
 // Generated a unique identifier for the original test (e.g. to deduplicate same results)

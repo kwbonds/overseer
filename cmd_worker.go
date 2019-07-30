@@ -202,7 +202,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 }
 
 // notify is used to store the result of a test in our redis queue.
-func (p *workerCmd) notify(testDefinition test.Test, result error) error {
+func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 
 	//
 	// If we don't have a redis-server then return immediately.
@@ -229,8 +229,8 @@ func (p *workerCmd) notify(testDefinition test.Test, result error) error {
 	// to contain the failure-message, and record that it was
 	// a failure rather than the default pass.
 	//
-	if result != nil {
-		errorString := result.Error()
+	if resultError != nil {
+		errorString := resultError.Error()
 		testResult.Error = &errorString
 	}
 
@@ -238,14 +238,13 @@ func (p *workerCmd) notify(testDefinition test.Test, result error) error {
 	if testDefinition.DeduplicationDuration != nil {
 
 		hash := testResult.Hash()
+		dedupCacheTime := p.getDeduplicationCacheTime(hash)
 		if testResult.Error != nil {
-
-			// With dedup, we don't want to trigger same notification again if not needed
-			dedupCacheTime := p.getDeduplicationCacheTime(hash)
 
 			// Save the current notification time
 			p.setDeduplicationCacheTime(hash, *testDefinition.DeduplicationDuration)
 
+			// With dedup, we don't want to trigger same notification again if not needed
 			if dedupCacheTime != nil {
 				now := time.Now().Unix()
 				diff := now - *dedupCacheTime
@@ -264,6 +263,11 @@ func (p *workerCmd) notify(testDefinition test.Test, result error) error {
 
 			// Clear any dedup cache, because the test has passed
 			p.clearDeduplicationCacheTime(hash)
+
+			// If there was a dedup cache time, we can mark this test as recovered
+			if dedupCacheTime != nil {
+				testResult.RecoveredFromError = true
+			}
 
 		}
 

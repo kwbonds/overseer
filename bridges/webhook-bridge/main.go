@@ -19,16 +19,19 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/go-redis/redis"
-	"github.com/skx/overseer/test"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/go-redis/redis"
+	"github.com/skx/overseer/test"
 )
 
 // The url we notify
 var webhookURL *string
+var sendTestSuccess *bool
+var sendTestRecovered *bool
 
 // The redis handle
 var r *redis.Client
@@ -47,10 +50,21 @@ func process(msg []byte) {
 		panic(err)
 	}
 
-	//
-	// If the test passed then we don't care.
-	//
+	// If the test passed then we don't care, unless otherwise defined
+	shouldSend := true
 	if testResult.Error == nil {
+		shouldSend = false
+
+		if *sendTestSuccess {
+			shouldSend = true
+		}
+
+		if *sendTestRecovered && testResult.RecoveredFromError {
+			shouldSend = true
+		}
+	}
+
+	if !shouldSend {
 		return
 	}
 
@@ -91,6 +105,8 @@ func main() {
 	redisHost := flag.String("redis-host", "127.0.0.1:6379", "Specify the address of the redis queue.")
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
 	webhookURL = flag.String("url", "", "The url address to notify")
+	sendTestSuccess = flag.Bool("send-test-success", false, "Send also test results when successful")
+	sendTestRecovered = flag.Bool("send-test-recovered", false, "Send also test results when a test recovers from failure (valid only when used together with deduplication rules)")
 	flag.Parse()
 
 	//

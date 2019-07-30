@@ -334,7 +334,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 
 		switch arg {
 		// Is there a custom per-test override?
-		case "maxRetries":
+		case "retries":
 			maxRetries, err := strconv.ParseInt(val, 10, 32)
 			if err != nil {
 				return result, fmt.Errorf("Non-numeric argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
@@ -346,7 +346,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 			continue
 
 			// Do not re-trigger same errors for the specified amount of time, or until test succeeds again
-		case "deduplicateFor":
+		case "dedup":
 			duration, err := time.ParseDuration(val)
 			if err != nil {
 				return result, fmt.Errorf("Non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
