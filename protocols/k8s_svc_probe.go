@@ -11,12 +11,16 @@ package protocols
 
 import (
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/skx/overseer/test"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type K8SSvcTest struct {
@@ -27,8 +31,7 @@ type K8SSvcTest struct {
 // their values.
 func (s *K8SSvcTest) Arguments() map[string]string {
 	known := map[string]string{
-		"endpoints": "^[0-9]+$",
-		"namespace": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+		"min-endpoints": "^[0-9]+$",
 	}
 	return known
 }
@@ -45,20 +48,14 @@ K8SSvc Tester
  The Kubernetes service tester checks that a k8s service has 
  more than the specified number of endpoints (default >= 1).
 
- It expects overseer worker to run from inside a k8s cluster.
-
  This test is invoked via input like so:
 
-    service-name must run k8s-svc
+    namespace-name/service-name must run k8s-svc
 
  The number of min endpoints that need to be available can be set with:
 
 	# Requires minimum 2 endpoints to be available for the test to succeed
-	service-name must run k8s-svc with endpoints 2
-
- The namespace where to look for the service can be set with:
-
-	service-name must run k8s-svc with namespace 'namespace-name'
+	service-name must run k8s-svc with min-endpoints 2
 `
 	return str
 }
@@ -72,31 +69,45 @@ func (s *K8SSvcTest) RunTest(tst test.Test, target string, opts test.Options) er
 	// The default port to connect to.
 	//
 	minEndpoints := 1
-	namespace := ""
+
+	parts := strings.Split(target, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("not a valid namespace-name/service-name target provided: %s", target)
+	}
+
+	namespace := parts[0]
+	serviceName := parts[1]
 
 	//
 	// If the user specified a different port update to use it.
 	//
-	if tst.Arguments["endpoints"] != "" {
-		minEndpoints, err = strconv.Atoi(tst.Arguments["endpoints"])
+	if tst.Arguments["min-endpoints"] != "" {
+		minEndpoints, err = strconv.Atoi(tst.Arguments["min-endpoints"])
 		if err != nil {
 			return err
 		}
 	}
-	if tst.Arguments["namespace"] != "" {
-		namespace = tst.Arguments["endpoints"]
+
+	var k8sConfig *rest.Config
+	kubeconfigPath := os.Getenv("KUBE_CONFIG_PATH")
+	if kubeconfigPath != "" {
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		k8sConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return err
+		}
 	}
 
-	config, err := rest.InClusterConfig()
+	clientset, err := kubernetes.NewForConfig(k8sConfig)
 	if err != nil {
 		return err
 	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return err
-	}
 
-	endpoints, err := clientset.CoreV1().Endpoints(namespace).Get(target, v1.GetOptions{})
+	endpoints, err := clientset.CoreV1().Endpoints(namespace).Get(serviceName, v1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -119,7 +130,7 @@ func (s *K8SSvcTest) RunTest(tst test.Test, target string, opts test.Options) er
 // Register our protocol-tester.
 //
 func init() {
-	Register("k8s_svc", func() ProtocolTest {
+	Register("k8s-svc", func() ProtocolTest {
 		return &K8SSvcTest{}
 	})
 }
