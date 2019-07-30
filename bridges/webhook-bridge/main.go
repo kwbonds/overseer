@@ -59,7 +59,7 @@ func process(msg []byte) {
 			shouldSend = true
 		}
 
-		if *sendTestRecovered && testResult.RecoveredFromError {
+		if *sendTestRecovered && testResult.Recovered {
 			shouldSend = true
 		}
 	}

@@ -16,8 +16,8 @@ type Result struct {
 	Tag    string `json:"tag"`
 
 	// If not nil, test has failed
-	Error              *string `json:"error"`
-	RecoveredFromError bool    `json:"recoveredFromError"`
+	Error     *string `json:"error"`
+	Recovered bool    `json:"recovered"`
 }
 
 // Generated a unique identifier for the original test (e.g. to deduplicate same results)

@@ -266,7 +266,7 @@ func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 
 			// If there was a dedup cache time, we can mark this test as recovered
 			if dedupCacheTime != nil {
-				testResult.RecoveredFromError = true
+				testResult.Recovered = true
 			}
 
 		}
