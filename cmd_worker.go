@@ -43,6 +43,9 @@ type workerCmd struct {
 	// Prior to retrying a failed test how long should we pause?
 	RetryDelay time.Duration
 
+	// Default deduplication duration
+	DedupDuration time.Duration
+
 	// The redis-host we're going to connect to for our queues.
 	RedisHost string
 
@@ -149,6 +152,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	defaults.Retry = true
 	defaults.RetryCount = 5
 	defaults.RetryDelay = 5 * time.Second
+	defaults.DedupDuration = 0
 	defaults.Tag = ""
 	defaults.Timeout = 10 * time.Second
 	defaults.Verbose = false
@@ -190,6 +194,8 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.Retry, "retry", defaults.Retry, "Should failing tests be retried a few times before raising a notification.")
 	f.IntVar(&p.RetryCount, "retry-count", defaults.RetryCount, "How many times to retry a test, before regarding it as a failure.")
 	f.DurationVar(&p.RetryDelay, "retry-delay", defaults.RetryDelay, "The time to sleep between failing tests.")
+
+	f.DurationVar(&p.DedupDuration, "dedup", defaults.DedupDuration, "The maximum duration of a deduplication.")
 
 	// Redis
 	f.StringVar(&p.RedisHost, "redis-host", defaults.RedisHost, "Specify the address of the redis queue.")
@@ -234,39 +240,55 @@ func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 		testResult.Error = &errorString
 	}
 
+	if testDefinition.DedupDuration == nil && p.DedupDuration > 0 {
+		// Assign a default dedup duration
+		testDefinition.DedupDuration = &p.DedupDuration
+	}
+
 	// If test has a deduplication rule, avoid re-triggering a notification if not needed, or clean the dedup cache if needed
-	if testDefinition.DeduplicationDuration != nil {
+	if testDefinition.DedupDuration != nil {
 
 		hash := testResult.Hash()
-		dedupCacheTime := p.getDeduplicationCacheTime(hash)
 		if testResult.Error != nil {
 
-			// Save the current notification time
-			p.setDeduplicationCacheTime(hash, *testDefinition.DeduplicationDuration)
+			// Save the current notification time, this keeps alive the deduplication. *10 so that it's not going to expire
+			// anytime soon.
+			p.setDeduplicationCacheTime(hash, *testDefinition.DedupDuration*10)
 
-			// With dedup, we don't want to trigger same notification again if not needed
-			if dedupCacheTime != nil {
+			lastAlertTime := p.getDeduplicationLastAlertTime(hash)
+
+			// With dedup, we don't want to trigger same notification, unless we just passed the dedup duration
+			if lastAlertTime != nil {
 				now := time.Now().Unix()
-				diff := now - *dedupCacheTime
-				dedupDurationSeconds := int64(*testDefinition.DeduplicationDuration / time.Second)
+				diffLastAlert := now - *lastAlertTime
+				dedupDurationSeconds := int64(*testDefinition.DedupDuration / time.Second)
 
-				if diff < dedupDurationSeconds {
+				// We could wait for it to expire in Redis, but rules may also be enqueued with different dedup duration
+				// at runtime
+				if diffLastAlert < dedupDurationSeconds {
 					// There is no need to trigger the notification, because not enough time has passed since the last one
 					p.verbose(fmt.Sprintf("Skipping notification (dedup, last notif %s ago) for test `%s` (%s)\n",
-						(time.Duration(diff) * time.Second).String(),
+						time.Duration(diffLastAlert)*time.Second,
 						testDefinition.Input, testDefinition.Target))
 					return nil
 				}
 			}
 
-		} else {
+			p.setDeduplicationLastAlertTime(hash, *testDefinition.DedupDuration)
 
-			// Clear any dedup cache, because the test has passed
-			p.clearDeduplicationCacheTime(hash)
+		} else {
+			// Check if a dedup was happening
+			dedupCacheTime := p.getDeduplicationCacheTime(hash)
 
 			// If there was a dedup cache time, we can mark this test as recovered
 			if dedupCacheTime != nil {
+				// Clear any dedup cache, because the test has passed
+				p.clearDeduplicationCacheTime(hash)
+				p.clearDeduplicationLastAlertTime(hash)
 				testResult.Recovered = true
+
+				p.verbose(fmt.Sprintf("Test recovered: `%s` (%s)\n",
+					testDefinition.Input, testDefinition.Target))
 			}
 
 		}
@@ -342,6 +364,60 @@ func (p *workerCmd) clearDeduplicationCacheTime(hash string) {
 	_, err := p._r.Del(cacheKey).Result()
 	if err != nil {
 		fmt.Printf("Failed to clear dedup cache key: %s\n", err)
+		return
+	}
+
+	return
+}
+
+func (p *workerCmd) getDeduplicationLastAlertKey(hash string) string {
+	return fmt.Sprintf("overseer.dedup-last-alert.%s", hash)
+}
+
+func (p *workerCmd) getDeduplicationLastAlertTime(hash string) *int64 {
+	if p._r == nil {
+		return nil
+	}
+
+	cacheKey := p.getDeduplicationLastAlertKey(hash)
+	cacheTime, err := p._r.Get(cacheKey).Int64()
+	if err != nil {
+		if err == redis.Nil {
+			// Key just does not exist
+			return nil
+		}
+
+		fmt.Printf("Failed to get dedup last alert key: %s\n", err)
+		return nil
+	}
+
+	return &cacheTime
+}
+
+func (p *workerCmd) setDeduplicationLastAlertTime(hash string, expiry time.Duration) {
+	if p._r == nil {
+		return
+	}
+
+	cacheKey := p.getDeduplicationLastAlertKey(hash)
+	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
+	if err != nil {
+		fmt.Printf("Failed to set dedup last alert key: %s\n", err)
+		return
+	}
+
+	return
+}
+
+func (p *workerCmd) clearDeduplicationLastAlertTime(hash string) {
+	if p._r == nil {
+		return
+	}
+
+	cacheKey := p.getDeduplicationLastAlertKey(hash)
+	_, err := p._r.Del(cacheKey).Result()
+	if err != nil {
+		fmt.Printf("Failed to clear dedup last alert key: %s\n", err)
 		return
 	}
 
@@ -555,11 +631,15 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 				//
 				p.verbose(fmt.Sprintf("\t[%d/%d] Test failed: %s\n", attempt, maxAttempts, result.Error()))
 
-				//
-				// Sleep before retrying the failing test.
-				//
-				p.verbose(fmt.Sprintf("\t\tSleeping for %s before retrying\n", p.RetryDelay.String()))
-				time.Sleep(p.RetryDelay)
+				// If there are no more retries, do not wait
+				if maxAttempts-attempt > 0 {
+					//
+					// Sleep before retrying the failing test.
+					//
+					p.verbose(fmt.Sprintf("\t\tSleeping for %s before retrying\n", p.RetryDelay.String()))
+
+					time.Sleep(p.RetryDelay)
+				}
 			}
 		}
 
