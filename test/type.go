@@ -44,7 +44,7 @@ type Test struct {
 	MaxRetries int
 
 	// If not nil, avoid re-triggering the same notification on failure for the defined amount of time, or until test succeeds again
-	DeduplicationDuration *time.Duration
+	DedupDuration *time.Duration
 
 	// Arguments contains a map of any optional arguments supplied to
 	// test test.
