@@ -35,7 +35,7 @@ Overseer is a simple and scalable [golang](https://golang.org/)-based remote pro
    * Requests may be DELETE, GET, HEAD, POST, PATCH, POST, & etc.
    * SSL certificate validation and expiration warnings are supported.
 * IMAP & IMAPS
-* Kubernetes service
+* Kubernetes service endpoints check
 * MySQL
 * NNTP
 * ping / ping6
@@ -192,16 +192,18 @@ The JSON object used to describe each test-result has the following fields:
 
 As mentioned this repository contains some demonstration "[bridges](bridges/)", which poll the results from Redis, and forward them to more useful systems:
 
-* `email-bridge/main.go`
+* [`webhook-bridge/main.go`](bridges/webhook-bridge/main.go)
+  * Forwards each test-result to a generic URL (e.g. to trigger notifications with [Notify17](https://notify17.net)).
+  * If started with the flag `-send-test-recovered=true`, tests which recovered from failure (see [deduplication](#deduplication)) are sent.
+  * If started with the flag `-send-test-success=true`, successful tests are sent.
+* [`email-bridge/main.go`](bridges/email-bridge/main.go)
   * This posts test-failures via email.
   * Tests which pass are not reported.
-* `irc-bridge/main.go`
+* [`irc-bridge/main.go`](bridges/irc-bridge/main.go)
   * This posts test-failures to an IRC channel.
   * Tests which pass are not reported, to avoid undue noise on your channel.
-* `purppura-bridge/main.go`
+* [`purppura-bridge/main.go`](bridges/purppura-bridge/main.go)
   * This forwards each test-result to a [purppura host](https://github.com/skx/purppura/).
-* `webhook-bridge/main.go`
-  * Forwards each test-result to a generic URL (e.g. to trigger notifications with [Notify17](https://notify17.net)). 
   
 ## Deduplication
 
