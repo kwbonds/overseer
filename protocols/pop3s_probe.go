@@ -41,6 +41,10 @@ func (s *POP3STest) Arguments() map[string]string {
 	return known
 }
 
+func (s *POP3STest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *POP3STest) Example() string {
 	str := `

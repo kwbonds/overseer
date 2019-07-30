@@ -58,6 +58,10 @@ func (s *FTPTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *FTPTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *FTPTest) Example() string {
 	str := `

@@ -37,6 +37,10 @@ func (s *IMAPTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *IMAPTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *IMAPTest) Example() string {
 	str := `

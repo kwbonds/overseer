@@ -43,6 +43,8 @@ type ProtocolTest interface {
 	// it passed.
 	//
 	RunTest(tst test.Test, target string, opts test.Options) error
+
+	ShouldResolveHostname() bool
 }
 
 // This is a map of known-tests.

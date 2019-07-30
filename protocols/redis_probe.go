@@ -34,6 +34,10 @@ func (s *REDISTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *REDISTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *REDISTest) Example() string {
 	str := `

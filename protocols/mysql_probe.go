@@ -38,6 +38,10 @@ func (s *MYSQLTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *MYSQLTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *MYSQLTest) Example() string {
 	str := `

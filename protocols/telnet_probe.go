@@ -32,6 +32,10 @@ func (s *TELNETTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *TELNETTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *TELNETTest) Example() string {
 	str := `

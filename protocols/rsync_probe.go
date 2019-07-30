@@ -35,6 +35,10 @@ func (s *RSYNCTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *RSYNCTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *RSYNCTest) Example() string {
 	str := `

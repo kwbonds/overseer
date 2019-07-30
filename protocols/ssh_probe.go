@@ -35,6 +35,10 @@ func (s *SSHTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *SSHTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *SSHTest) Example() string {
 	str := `

@@ -141,6 +141,10 @@ func (s *DNSTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *DNSTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *DNSTest) Example() string {
 	str := `

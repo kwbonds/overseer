@@ -41,6 +41,10 @@ func (s *NNTPTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *NNTPTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *NNTPTest) Example() string {
 	str := `

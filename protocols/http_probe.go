@@ -121,6 +121,10 @@ func (s *HTTPTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *HTTPTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *HTTPTest) Example() string {
 	str := `
