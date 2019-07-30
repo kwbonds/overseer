@@ -9,17 +9,15 @@ Table of Contents
 =================
 
 * [Overseer](#overseer)
-* [Installation &amp; Dependencies](#installation--dependencies)
-  * [Source Installation go &lt;=  1.11](#source-installation-go---111)
-  * [Source installation go  &gt;= 1.12](#source-installation-go---112)
+* [Installation](#installation)
   * [Dependencies](#dependencies)
 * [Executing Tests](#executing-tests)
   * [Running Automatically](#running-automatically)
   * [Smoothing Test Failures](#smoothing-test-failures)
 * [Notifications](#notifications)
+  * [Deduplication](#deduplication)
 * [Metrics](#metrics)
 * [Redis Specifics](#redis-specifics)
-* [Github Setup](#github-setup)
 
 
 # Overseer
