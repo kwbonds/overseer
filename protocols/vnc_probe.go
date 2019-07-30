@@ -35,6 +35,10 @@ func (s *VNCTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *VNCTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *VNCTest) Example() string {
 	str := `

@@ -491,62 +491,70 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 	//
 	var targets []string
 
-	//
-	// If the first argument looks like an URI then get the host
-	// out of it.
-	//
-	if strings.Contains(testTarget, "://") {
-		u, err := url.Parse(testTarget)
+	// If we're dealing with hostname-based testing, then resolve hostnames
+	if tmp.ShouldResolveHostname() {
+
+		//
+		// If the first argument looks like an URI then get the host
+		// out of it.
+		//
+		if strings.Contains(testTarget, "://") {
+			u, err := url.Parse(testTarget)
+			if err != nil {
+				return err
+			}
+			testTarget = u.Hostname()
+		}
+
+		// Record the time before we lookup our targets IPs.
+		timeA := time.Now()
+
+		// Now resolve the target to IPv4 & IPv6 addresses.
+		ips, err := net.LookupIP(testTarget)
 		if err != nil {
+
+			//
+			// Notify the world about our DNS-failure.
+			//
+			p.notify(tst, fmt.Errorf("Failed to resolve name %s", testTarget))
+
+			//
+			// Otherwise we're done.
+			//
+			fmt.Printf("WARNING: Failed to resolve %s for %s test!\n", testTarget, testType)
 			return err
 		}
-		testTarget = u.Hostname()
-	}
 
-	// Record the time before we lookup our targets IPs.
-	timeA := time.Now()
+		// Calculate the time the DNS-resolution took - in milliseconds.
+		timeB := time.Now()
+		duration := timeB.Sub(timeA)
+		diff := fmt.Sprintf("%f", float64(duration)/float64(time.Millisecond))
 
-	// Now resolve the target to IPv4 & IPv6 addresses.
-	ips, err := net.LookupIP(testTarget)
-	if err != nil {
-
-		//
-		// Notify the world about our DNS-failure.
-		//
-		p.notify(tst, fmt.Errorf("Failed to resolve name %s", testTarget))
+		// Record time in our metric hash
+		metrics["overseer.dns."+p.alphaNumeric(testTarget)+".duration"] = diff
 
 		//
-		// Otherwise we're done.
+		// We'll run the test against each of the resulting IPv4 and
+		// IPv6 addresess - ignoring any IP-protocol which is disabled.
 		//
-		fmt.Printf("WARNING: Failed to resolve %s for %s test!\n", testTarget, testType)
-		return err
-	}
-
-	// Calculate the time the DNS-resolution took - in milliseconds.
-	timeB := time.Now()
-	duration := timeB.Sub(timeA)
-	diff := fmt.Sprintf("%f", float64(duration)/float64(time.Millisecond))
-
-	// Record time in our metric hash
-	metrics["overseer.dns."+p.alphaNumeric(testTarget)+".duration"] = diff
-
-	//
-	// We'll run the test against each of the resulting IPv4 and
-	// IPv6 addresess - ignoring any IP-protocol which is disabled.
-	//
-	// Save the results in our `targets` array, unless disabled.
-	//
-	for _, ip := range ips {
-		if ip.To4() != nil {
-			if p.IPv4 {
-				targets = append(targets, ip.String())
+		// Save the results in our `targets` array, unless disabled.
+		//
+		for _, ip := range ips {
+			if ip.To4() != nil {
+				if p.IPv4 {
+					targets = append(targets, ip.String())
+				}
+			}
+			if ip.To16() != nil && ip.To4() == nil {
+				if p.IPv6 {
+					targets = append(targets, ip.String())
+				}
 			}
 		}
-		if ip.To16() != nil && ip.To4() == nil {
-			if p.IPv6 {
-				targets = append(targets, ip.String())
-			}
-		}
+
+	} else {
+		// Directly pass the original target
+		targets = append(targets, testTarget)
 	}
 
 	//
@@ -584,7 +592,7 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 		//
 		// Record the start-time of the test.
 		//
-		timeA = time.Now()
+		timeA := time.Now()
 
 		//
 		// Start the count here for graphing execution attempts.
@@ -648,9 +656,9 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 		// took to carry out, and the number of attempts it
 		// took to complete.
 		//
-		timeB = time.Now()
+		timeB := time.Now()
 		duration := timeB.Sub(timeA)
-		diff = fmt.Sprintf("%f", float64(duration)/float64(time.Millisecond))
+		diff := fmt.Sprintf("%f", float64(duration)/float64(time.Millisecond))
 		metrics[p.formatMetrics(tst, "duration")] = diff
 		metrics[p.formatMetrics(tst, "attempts")] = fmt.Sprintf("%d", c)
 

@@ -26,6 +26,10 @@ import (
 type PINGTest struct {
 }
 
+func (s *PINGTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // RunCommand invokes an external binary and returns stdout/stderr/exit-code
 func (s *PINGTest) RunCommand(name string, args ...string) (stdout string, stderr string, exitCode int) {
 	var outbuf, errbuf bytes.Buffer

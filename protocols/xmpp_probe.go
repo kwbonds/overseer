@@ -34,6 +34,10 @@ func (s *XMPPTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *XMPPTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *XMPPTest) Example() string {
 	str := `

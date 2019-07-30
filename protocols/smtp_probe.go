@@ -52,6 +52,10 @@ func (s *SMTPTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *SMTPTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *SMTPTest) Example() string {
 	str := `

@@ -44,6 +44,10 @@ func (s *FINGERTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *FINGERTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *FINGERTest) Example() string {
 	str := `

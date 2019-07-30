@@ -24,5 +24,6 @@ require (
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	golang.org/x/sys v0.0.0-20190316082340-a2f829d7f35f // indirect
 	golang.org/x/tools v0.0.0-20190315214010-f0bfdbff1f9c // indirect
-	google.golang.org/appengine v1.4.0 // indirect
+	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
+	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
 )

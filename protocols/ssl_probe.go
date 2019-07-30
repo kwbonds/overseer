@@ -45,6 +45,10 @@ func (s *SSLTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *SSLTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *SSLTest) Example() string {
 	str := `

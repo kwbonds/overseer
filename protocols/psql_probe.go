@@ -43,6 +43,10 @@ func (s *PSQLTest) Arguments() map[string]string {
 	return known
 }
 
+func (s *PSQLTest) ShouldResolveHostname() bool {
+	return true
+}
+
 // Example returns sample usage-instructions for self-documentation purposes.
 func (s *PSQLTest) Example() string {
 	str := `
