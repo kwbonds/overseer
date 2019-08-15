@@ -335,6 +335,8 @@ func TestHTTPOptions(t *testing.T) {
 		"http://example.com/ must run http with content moi",
 		"http://example.com/ must run http with status '200'",
 		"http://example.com/ must run http with status 200",
+		"http://example.com/ must run http with not-content 'hello'",
+		"http://example.com/ must run http with not-pattern 'Brrr\\s+August'",
 	}
 
 	// Create a parser

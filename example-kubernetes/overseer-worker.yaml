@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overseer-worker
+  namespace: overseer
+  labels:
+    app: overseer-worker
+spec:
+  selector:
+    matchLabels:
+      app: overseer-worker
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: overseer-worker
+    spec:
+      serviceAccount: overseer-worker
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - overseer-worker
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: overseer-worker
+          image: cmaster11/overseer:docker-1.9-0
+          args:
+            - worker
+            - -redis-host
+            - redis:6379
+            - -verbose
+            # A tag to identify the current overseer workers.
+            # Useful when dealing with multiple overseer workers in multiple Kubernetes clusters.
+            - -tag
+            - my-k8s-cluster
+            # How many retries do we want for each test, before it can be considered failed?
+            - -retry-count
+            - "2"
+            # How long do we want to wait before being notified again about the test results?
+            - -dedup
+            - "5m"
