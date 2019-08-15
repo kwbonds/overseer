@@ -13,7 +13,7 @@ It will generate:
 
 ## Install
 
-* Create a [notification template](https://notify17.net/docs/templates/) using [Notify17's dashboard](https://dash.notify17.net/#/notificationTemplates), 
+* Use the [Overseer recipe](https://notify17.net/recipes/overseer/) to create a notification template using [Notify17's dashboard](https://dash.notify17.net/#/notificationTemplates), 
 and replace the `REPLACE_TEMPLATE_API_KEY` string in [`overseer-bridge-webhook-n17.yaml`](overseer-bridge-webhook-n17.yaml) with the template's API key.
 * Run `kubectl apply -f .` to create all `overseer` resources.
 
