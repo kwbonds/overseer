@@ -26,11 +26,21 @@
 //
 //    https://steve.fi/ must run http with content 'Steve Kemp'
 //
+// The following would be regarded as a failure if the response body
+// DOES contain a particular piece of text:
+//
+// https://steve.fi/ must run http with not-content 'Steve Kemp'
+//
 // The 'content' setting looks for a literal match in the response-body,
 // if you're looking for something more flexible you can instead test that
 // the response-body matches a given regular-expression:
 //
 //   https://steve.fi/ must run http with pattern 'Steve\s+Kemp'
+//
+// The following would be regarded as a failure if the response body
+// DOES match a particular pattern:
+//
+// https://steve.fi/ must run http with not-pattern 'Steve\s+Kemp'
 //
 // (The regular expression will be assumed to be multi-line, and
 // will also allow newlines to be matched with ".".)
@@ -107,16 +117,18 @@ type HTTPTest struct {
 // their values.
 func (s *HTTPTest) Arguments() map[string]string {
 	known := map[string]string{
-		"user-agent": ".*",
-		"content":    ".*",
-		"data":       ".*",
-		"expiration": "^(any|[0-9]+[hd]?)$",
-		"method":     "^(GET|HEAD|POST|PUT|PATCH|DELETE)$",
-		"password":   ".*",
-		"pattern":    ".*",
-		"status":     "^(any|[0-9]+)$",
-		"tls":        "insecure",
-		"username":   ".*",
+		"user-agent":  ".*",
+		"content":     ".*",
+		"not-content": ".*",
+		"data":        ".*",
+		"expiration":  "^(any|[0-9]+[hd]?)$",
+		"method":      "^(GET|HEAD|POST|PUT|PATCH|DELETE)$",
+		"password":    ".*",
+		"pattern":     ".*",
+		"not-pattern": ".*",
+		"status":      "^(any|[0-9]+)$",
+		"tls":         "insecure",
+		"username":    ".*",
 	}
 	return known
 }
@@ -150,17 +162,27 @@ HTTP Tester
    with status any
 
  It is also possible to regard a fetch as a failure if the response body
- does not contain a particular piece of text.  For example the following
+ does not contain a particular piece of text. For example the following
  would be regarded as a failure if my website did not contain my name
  in the body of the response:
 
    https://steve.fi/ must run http with content 'Steve Kemp'
+
+ The following would be regarded as a failure if the response body 
+ DOES contain a particular piece of text:
+
+   https://steve.fi/ must run http with not-content 'Steve Kemp'
 
  The 'content' setting looks for a literal match in the response-body,
  if you're looking for something more flexible you can instead test that
  the response-body matches a given regular-expression:
 
    https://steve.fi/ must run http with pattern 'Steve\s+Kemp'
+
+ The following would be regarded as a failure if the response body 
+ DOES match a particular pattern:
+
+   https://steve.fi/ must run http with not-pattern 'Steve\s+Kemp'
 
  (The regular expression will be assumed to be multi-line, and
  will also allow newlines to be matched with ".".)
@@ -432,6 +454,15 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	}
 
 	//
+	// Is the user NOT looking for a literal body-match?
+	//
+	if tst.Arguments["not-content"] != "" {
+		if strings.Contains(string(body), tst.Arguments["not-content"]) {
+			return fmt.Errorf("Body contains '%s'", tst.Arguments["not-content"])
+		}
+	}
+
+	//
 	// Is the user expecting a regular expression to match the content?
 	//
 	if tst.Arguments["pattern"] != "" {
@@ -444,6 +475,22 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		match := re.FindAllStringSubmatch(string(body), -1)
 		if len(match) < 1 {
 			return fmt.Errorf("Body didn't match the regular expression '%s'", tst.Arguments["pattern"])
+		}
+	}
+
+	//
+	// Is the user NOT expecting a regular expression to match the content?
+	//
+	if tst.Arguments["not-pattern"] != "" {
+		re, error := regexp.Compile("(?ms)" + tst.Arguments["not-pattern"])
+		if error != nil {
+			return error
+		}
+
+		// Skip unless this handler matches the filter.
+		match := re.FindAllStringSubmatch(string(body), -1)
+		if len(match) > 0 {
+			return fmt.Errorf("Body matched the regular expression '%s'", tst.Arguments["not-pattern"])
 		}
 	}
 
