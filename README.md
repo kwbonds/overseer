@@ -169,7 +169,7 @@ retry-logic via the command-line flag `-retry=false`.
 
 The result of each test is submitted to the central redis-host, from where it can be pulled and used to notify a human of a problem.
 
-Sample result-processors are [included](bridges/) in this repository which post test-results via [webhook](bridges/webhook-bridge/main.go) (e.g. to trigger notifications with [Notify17](https://notify17.net), to a [purppura instance](https://github.com/skx/purppura), via email, or by posting a message to an IRC channel.
+Sample result-processors are [included](bridges/) in this repository which post test-results via [webhook](bridges/webhook-bridge/main.go) (e.g. to trigger notifications with [Notify17](https://notify17.net), to a [purppura instance](https://github.com/skx/purppura) or via email.
 
 The sample bridges are primarily included for demonstration purposes, the
 expectation is you'll prefer to process the results and issue notifications to
@@ -205,9 +205,6 @@ As mentioned this repository contains some demonstration "[bridges](bridges/)", 
 * [`email-bridge/main.go`](bridges/email-bridge/main.go)
   * This posts test-failures via email.
   * Tests which pass are not reported.
-* [`irc-bridge/main.go`](bridges/irc-bridge/main.go)
-  * This posts test-failures to an IRC channel.
-  * Tests which pass are not reported, to avoid undue noise on your channel.
 * [`purppura-bridge/main.go`](bridges/purppura-bridge/main.go)
   * This forwards each test-result to a [purppura host](https://github.com/skx/purppura/).
   
