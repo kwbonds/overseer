@@ -45,6 +45,7 @@ func (s *SSLTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *SSLTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -91,6 +92,7 @@ expiration period is assumed to be days:
 //
 func (s *SSLTest) RunTest(tst test.Test, target string, opts test.Options) error {
 
+	var err error
 	target = tst.Target
 
 	//
@@ -127,7 +129,7 @@ func (s *SSLTest) RunTest(tst test.Test, target string, opts test.Options) error
 		}
 
 		// Get the period.
-		period, err := strconv.Atoi(expire)
+		period, err = strconv.Atoi(expire)
 		if err != nil {
 			return err
 		}

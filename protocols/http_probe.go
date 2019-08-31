@@ -133,6 +133,7 @@ func (s *HTTPTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *HTTPTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -458,7 +459,7 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	//
 	if tst.Arguments["not-content"] != "" {
 		if strings.Contains(string(body), tst.Arguments["not-content"]) {
-			return fmt.Errorf("Body contains '%s'", tst.Arguments["not-content"])
+			return fmt.Errorf("body contains '%s'", tst.Arguments["not-content"])
 		}
 	}
 
@@ -490,7 +491,7 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		// Skip unless this handler matches the filter.
 		match := re.FindAllStringSubmatch(string(body), -1)
 		if len(match) > 0 {
-			return fmt.Errorf("Body matched the regular expression '%s'", tst.Arguments["not-pattern"])
+			return fmt.Errorf("body matched the regular expression '%s'", tst.Arguments["not-pattern"])
 		}
 	}
 

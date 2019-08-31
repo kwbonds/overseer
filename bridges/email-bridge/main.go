@@ -99,7 +99,7 @@ func process(msg []byte) {
 	src := string(Template)
 	t := template.Must(template.New("tmpl").Parse(src))
 	buf := &bytes.Buffer{}
-	err := t.Execute(buf, x)
+	err = t.Execute(buf, x)
 	if err != nil {
 		fmt.Printf("Failed to compile email-template %s\n", err.Error())
 		return

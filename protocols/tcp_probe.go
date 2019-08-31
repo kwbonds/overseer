@@ -46,6 +46,7 @@ func (s *TCPTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *TCPTest) ShouldResolveHostname() bool {
 	return true
 }

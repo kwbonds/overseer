@@ -350,10 +350,7 @@ func (p *workerCmd) setDeduplicationCacheTime(hash string, expiry time.Duration)
 	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
 	if err != nil {
 		fmt.Printf("Failed to set dedup cache key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 func (p *workerCmd) clearDeduplicationCacheTime(hash string) {
@@ -365,10 +362,7 @@ func (p *workerCmd) clearDeduplicationCacheTime(hash string) {
 	_, err := p._r.Del(cacheKey).Result()
 	if err != nil {
 		fmt.Printf("Failed to clear dedup cache key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 func (p *workerCmd) getDeduplicationLastAlertKey(hash string) string {
@@ -404,10 +398,7 @@ func (p *workerCmd) setDeduplicationLastAlertTime(hash string, expiry time.Durat
 	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
 	if err != nil {
 		fmt.Printf("Failed to set dedup last alert key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 func (p *workerCmd) clearDeduplicationLastAlertTime(hash string) {
@@ -419,10 +410,7 @@ func (p *workerCmd) clearDeduplicationLastAlertTime(hash string) {
 	_, err := p._r.Del(cacheKey).Result()
 	if err != nil {
 		fmt.Printf("Failed to clear dedup last alert key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 // alphaNumeric removes all non alpha-numeric characters from the

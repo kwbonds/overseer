@@ -26,6 +26,7 @@ import (
 type PINGTest struct {
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *PINGTest) ShouldResolveHostname() bool {
 	return true
 }
