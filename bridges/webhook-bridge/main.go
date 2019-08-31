@@ -36,10 +36,6 @@ var sendTestRecovered *bool
 // The redis handle
 var r *redis.Client
 
-// The redis connection details
-var redisHost *string
-var redisPass *string
-
 //
 // Given a JSON string decode it and post it via webhook if it describes
 // a test-failure.
@@ -141,7 +137,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for true {
+	for {
 
 		//
 		// Get test-results
