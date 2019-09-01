@@ -137,6 +137,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Printf("webhook bridge started with url %s\n", *webhookURL)
+
 	for {
 
 		//
