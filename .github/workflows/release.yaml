@@ -1,5 +1,10 @@
-on: release
-name: Handle Release
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - release-*
+name: Handle push tag
 jobs:
   upload:
     name: Upload
