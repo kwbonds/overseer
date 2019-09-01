@@ -3,6 +3,7 @@ name: Handle Release
 jobs:
   upload-to-docker-hub:
     name: Upload to Docker Hub
+    runs-on: ubuntu-latest
     steps:
       - name: Docker login
         uses: actions/docker/login@master
