@@ -35,6 +35,7 @@ func (s *VNCTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *VNCTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -112,7 +113,7 @@ func (s *VNCTest) RunTest(tst test.Test, target string, opts test.Options) error
 	conn.Close()
 
 	if !strings.Contains(banner, "RFB") {
-		return errors.New("Banner doesn't look like VNC")
+		return errors.New("banner doesn't look like VNC")
 	}
 
 	return nil

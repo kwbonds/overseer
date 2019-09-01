@@ -26,6 +26,7 @@ import (
 type PINGTest struct {
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *PINGTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -116,7 +117,7 @@ func (s *PINGTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		if s.Ping4(target) {
 			return nil
 		}
-		return errors.New("Failed to ping")
+		return errors.New("failed to ping binary")
 	}
 
 	//
@@ -126,7 +127,7 @@ func (s *PINGTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		if s.Ping6(target) {
 			return nil
 		}
-		return errors.New("Failed to ping")
+		return errors.New("failed to ping target")
 	}
 
 	//

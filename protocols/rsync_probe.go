@@ -35,6 +35,7 @@ func (s *RSYNCTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *RSYNCTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -112,7 +113,7 @@ func (s *RSYNCTest) RunTest(tst test.Test, target string, opts test.Options) err
 	conn.Close()
 
 	if !strings.Contains(banner, "RSYNC") {
-		return errors.New("Banner doesn't look like an rsync-banner")
+		return errors.New("banner doesn't look like a rsync-banner")
 	}
 
 	return nil

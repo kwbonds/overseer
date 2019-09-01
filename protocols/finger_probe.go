@@ -44,6 +44,7 @@ func (s *FINGERTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *FINGERTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -158,7 +159,7 @@ func (s *FINGERTest) RunTest(tst test.Test, target string, opts test.Options) er
 	content := tst.Arguments["content"]
 	if content != "" {
 		if !strings.Contains(output, content) {
-			return fmt.Errorf("The finger-output did not contain the required text '%s'", content)
+			return fmt.Errorf("the finger-output did not contain the required text '%s'", content)
 		}
 	}
 

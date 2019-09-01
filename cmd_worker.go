@@ -19,7 +19,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
-	"github.com/marpaia/graphite-golang"
+	graphite "github.com/marpaia/graphite-golang"
 	_ "github.com/skx/golang-metrics"
 	"github.com/skx/overseer/parser"
 	"github.com/skx/overseer/protocols"
@@ -133,7 +133,7 @@ func (p *workerCmd) MetricsFromEnvironment() {
 // verbose shows a message only if we're running verbosely
 func (p *workerCmd) verbose(txt string) {
 	if p.Verbose {
-		fmt.Printf(txt)
+		fmt.Print(txt)
 	}
 }
 
@@ -350,10 +350,7 @@ func (p *workerCmd) setDeduplicationCacheTime(hash string, expiry time.Duration)
 	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
 	if err != nil {
 		fmt.Printf("Failed to set dedup cache key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 func (p *workerCmd) clearDeduplicationCacheTime(hash string) {
@@ -365,10 +362,7 @@ func (p *workerCmd) clearDeduplicationCacheTime(hash string) {
 	_, err := p._r.Del(cacheKey).Result()
 	if err != nil {
 		fmt.Printf("Failed to clear dedup cache key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 func (p *workerCmd) getDeduplicationLastAlertKey(hash string) string {
@@ -404,10 +398,7 @@ func (p *workerCmd) setDeduplicationLastAlertTime(hash string, expiry time.Durat
 	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
 	if err != nil {
 		fmt.Printf("Failed to set dedup last alert key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 func (p *workerCmd) clearDeduplicationLastAlertTime(hash string) {
@@ -419,10 +410,7 @@ func (p *workerCmd) clearDeduplicationLastAlertTime(hash string) {
 	_, err := p._r.Del(cacheKey).Result()
 	if err != nil {
 		fmt.Printf("Failed to clear dedup last alert key: %s\n", err)
-		return
 	}
-
-	return
 }
 
 // alphaNumeric removes all non alpha-numeric characters from the
@@ -517,7 +505,7 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 			//
 			// Notify the world about our DNS-failure.
 			//
-			p.notify(tst, fmt.Errorf("Failed to resolve name %s", testTarget))
+			p.notify(tst, fmt.Errorf("failed to resolve name %s", testTarget))
 
 			//
 			// Otherwise we're done.
@@ -577,7 +565,7 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 		//
 		// If retrying is disabled then don't retry.
 		//
-		if p.Retry == false {
+		if !p.Retry {
 			maxAttempts = attempt + 1
 		}
 
@@ -770,10 +758,12 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	//
 	parse := parser.New()
 
+	fmt.Println("worker started")
+
 	//
 	// Wait for jobs, in a blocking-manner.
 	//
-	for true {
+	for {
 
 		//
 		// Get a job.

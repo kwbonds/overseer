@@ -58,6 +58,7 @@ func (s *FTPTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *FTPTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -243,7 +244,7 @@ func (s *FTPTest) RunTest(tst test.Test, target string, opts test.Options) error
 		//
 		if tst.Arguments["content"] != "" {
 			if !strings.Contains(string(buf), tst.Arguments["content"]) {
-				return fmt.Errorf("Body didn't contain '%s'", tst.Arguments["content"])
+				return fmt.Errorf("body didn't contain '%s'", tst.Arguments["content"])
 			}
 		}
 

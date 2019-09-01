@@ -52,6 +52,7 @@ func (s *SMTPTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *SMTPTest) ShouldResolveHostname() bool {
 	return true
 }

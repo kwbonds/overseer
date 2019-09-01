@@ -35,6 +35,7 @@ func (s *SSHTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *SSHTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -112,7 +113,7 @@ func (s *SSHTest) RunTest(tst test.Test, target string, opts test.Options) error
 	conn.Close()
 
 	if !strings.Contains(banner, "SSH-") {
-		return errors.New("Banner doesn't look like an SSH server")
+		return errors.New("banner doesn't look like an SSH server")
 	}
 
 	return nil

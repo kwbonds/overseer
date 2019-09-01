@@ -34,6 +34,7 @@ func (s *XMPPTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *XMPPTest) ShouldResolveHostname() bool {
 	return true
 }
@@ -126,7 +127,7 @@ func (s *XMPPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	}
 
 	if !strings.Contains(banner, "<?xml") {
-		return fmt.Errorf("Banner doesn't look like an XMPP-banner '%s'", banner)
+		return fmt.Errorf("banner doesn't look like an XMPP-banner '%s'", banner)
 	}
 
 	return nil

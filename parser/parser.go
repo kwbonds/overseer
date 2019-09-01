@@ -59,7 +59,7 @@ func (s *Parser) executable(path string) (bool, error) {
 	mode := stat.Mode()
 
 	if !mode.IsRegular() {
-		return false, errors.New("Not regular")
+		return false, errors.New("not regular")
 	}
 
 	if (mode & 0111) == 0 {
@@ -75,7 +75,6 @@ func (s *Parser) ParseFile(filename string, cb ParsedTest) error {
 
 	// This is the scanner we'll use
 	var scanner *bufio.Scanner
-	var err error
 
 	// Read from stdin
 	if filename == "-" {
@@ -87,7 +86,7 @@ func (s *Parser) ParseFile(filename string, cb ParsedTest) error {
 		// it, rather than the literal contents.
 		//
 		e, err := s.executable(filename)
-		if (err == nil) && (e == true) {
+		if (err == nil) && (e) {
 			cmd := exec.Command(filename)
 			var outb, errb bytes.Buffer
 			cmd.Stdout = &outb
@@ -152,7 +151,7 @@ func (s *Parser) ParseFile(filename string, cb ParsedTest) error {
 		// a comment then process it.
 		//
 		if (line != "") && (!strings.HasPrefix(line, "#")) {
-			_, err = s.ParseLine(line, cb)
+			_, err := s.ParseLine(line, cb)
 			if err != nil {
 				return err
 			}
@@ -201,7 +200,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 	//
 	// Is this a macro-definition?
 	//
-	macro := regexp.MustCompile("^([A-Z0-9]+)\\s+are\\s+(.*)$")
+	macro := regexp.MustCompile(`^([A-Z0-9]+)\s+are\s+(.*)$`)
 	match := macro.FindStringSubmatch(input)
 	if len(match) == 3 {
 
@@ -232,14 +231,14 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 	//
 	// Look to see if this line matches the testing line
 	//
-	re := regexp.MustCompile("^([^ \t]+)\\s+must\\s+run\\s+([^\\s]+)")
+	re := regexp.MustCompile(`^([^ \t]+)\s+must\s+run\s+([^\s]+)`)
 	out := re.FindStringSubmatch(input)
 
 	//
 	// If it didn't then we have a malformed line
 	//
 	if len(out) != 3 {
-		return result, fmt.Errorf("WARNING: Unrecognized line - '%s'", input)
+		return result, fmt.Errorf("unrecognized line - '%s'", input)
 	}
 
 	//
@@ -253,7 +252,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 	//
 	handler := protocols.ProtocolHandler(testType)
 	if handler == nil {
-		return result, fmt.Errorf("Unknown test-type '%s' in input '%s'", testType, input)
+		return result, fmt.Errorf("unknown test-type '%s' in input '%s'", testType, input)
 	}
 
 	//
@@ -287,7 +286,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 			//   ..
 			//   hostN must run xxx.
 			//
-			split := regexp.MustCompile("^([^\\s]+)\\s+(.*)$")
+			split := regexp.MustCompile(`^([^\s]+)\s+(.*)$`)
 			line := split.FindStringSubmatch(input)
 
 			//
@@ -337,7 +336,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 		case "retries":
 			maxRetries, err := strconv.ParseInt(val, 10, 32)
 			if err != nil {
-				return result, fmt.Errorf("Non-numeric argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+				return result, fmt.Errorf("non-numeric argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
 			}
 			result.MaxRetries = int(maxRetries)
 
@@ -349,7 +348,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 		case "dedup":
 			duration, err := time.ParseDuration(val)
 			if err != nil {
-				return result, fmt.Errorf("Non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+				return result, fmt.Errorf("non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
 			}
 
 			result.DedupDuration = &duration
@@ -365,7 +364,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 		//
 		pattern := expected[arg]
 		if pattern == "" {
-			return result, fmt.Errorf("Unsupported argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			return result, fmt.Errorf("unsupported argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
 		}
 
 		//
@@ -375,7 +374,7 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 		match := expr.FindStringSubmatch(val)
 
 		if match == nil {
-			return result, fmt.Errorf("Unsupported argument '%s' for test-type '%s' in input '%s' - did not match pattern '%s'", arg, testType, input, pattern)
+			return result, fmt.Errorf("unsupported argument '%s' for test-type '%s' in input '%s' - did not match pattern '%s'", arg, testType, input, pattern)
 		}
 
 	}
@@ -421,7 +420,7 @@ func (s *Parser) ParseArguments(input string) map[string]string {
 	//
 	// Look for each option
 	//
-	expr := regexp.MustCompile("^(.*)\\s+with\\s+([^\\s]+)\\s+('.+'|\".+\"|\\S+)")
+	expr := regexp.MustCompile(`^(.*)\s+with\s+([^\s]+)\s+('.+'|\".+\"|\S+)`)
 	match := expr.FindStringSubmatch(input)
 
 	for len(match) > 1 {
