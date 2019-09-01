@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
-	"github.com/skx/overseer/test"
 )
 
 // REDISTest is our object

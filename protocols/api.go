@@ -9,14 +9,13 @@ package protocols
 import (
 	"sync"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // ProtocolTest interface is the core of our code, it
 // defines the implementation methods which must be
 // implemented to add a new protocol-test.
 type ProtocolTest interface {
-
 	//
 	// Arguments return the arguments which this protocol-test, along
 	// with a regular expression which will be used to validate a non-empty

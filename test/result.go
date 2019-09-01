@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/skx/overseer/utils"
+	"github.com/cmaster11/overseer/utils"
 )
 
 // Result contains a single test result

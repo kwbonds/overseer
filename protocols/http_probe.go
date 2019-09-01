@@ -105,7 +105,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // HTTPTest is our object.

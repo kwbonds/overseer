@@ -17,13 +17,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cmaster11/overseer/parser"
+	"github.com/cmaster11/overseer/protocols"
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
-	graphite "github.com/marpaia/graphite-golang"
+	"github.com/marpaia/graphite-golang"
 	_ "github.com/skx/golang-metrics"
-	"github.com/skx/overseer/parser"
-	"github.com/skx/overseer/protocols"
-	"github.com/skx/overseer/test"
 )
 
 // This is our structure, largely populated by command-line arguments

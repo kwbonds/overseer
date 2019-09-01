@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/miekg/dns"
-	"github.com/skx/overseer/test"
 )
 
 // DNSTest is our object.

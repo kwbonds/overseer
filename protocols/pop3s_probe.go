@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/simia-tech/go-pop3"
-	"github.com/skx/overseer/test"
 )
 
 // POP3STest is our object

@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/skx/overseer/protocols"
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/protocols"
+	"github.com/cmaster11/overseer/test"
 )
 
 // Parser holds our parser-state.

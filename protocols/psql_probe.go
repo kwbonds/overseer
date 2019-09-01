@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/cmaster11/overseer/test"
 	_ "github.com/lib/pq" // Don't need to import this
-	"github.com/skx/overseer/test"
 )
 
 // PSQLTest is our object

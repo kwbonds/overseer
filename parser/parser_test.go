@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // Test that parsing a missing file returns an error

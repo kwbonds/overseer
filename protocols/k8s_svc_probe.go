@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	// Import all auth methods k8s

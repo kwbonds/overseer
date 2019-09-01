@@ -11,10 +11,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/cmaster11/overseer/parser"
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
-	"github.com/skx/overseer/parser"
-	"github.com/skx/overseer/test"
 )
 
 type enqueueCmd struct {

@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"strings"
 
-	client "github.com/emersion/go-imap/client"
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
+	"github.com/emersion/go-imap/client"
 )
 
 // IMAPSTest is our object

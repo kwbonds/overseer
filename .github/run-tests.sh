@@ -7,12 +7,12 @@ go get -u honnef.co/go/tools/cmd/staticcheck
 
 # Run the static-check tool
 t=$(mktemp)
-staticcheck -checks all ./... | grep -v " is overwritten before first use " > $t
+staticcheck -checks all ./... | grep -v " is overwritten before first use " >$t
 if [ -s $t ]; then
-    echo "Found errors via 'staticcheck'"
-    cat $t
-    rm $t
-    exit 1
+  echo "Found errors via 'staticcheck'"
+  cat $t
+  rm $t
+  exit 1
 fi
 rm $t
 

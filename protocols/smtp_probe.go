@@ -32,7 +32,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // SMTPTest is our object

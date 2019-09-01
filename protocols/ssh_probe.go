@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // SSHTest is our object.

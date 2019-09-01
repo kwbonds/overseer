@@ -37,8 +37,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/jlaffaye/ftp"
-	"github.com/skx/overseer/test"
 )
 
 // FTPTest is our object.

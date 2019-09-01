@@ -5,7 +5,7 @@ DIR="$(dirname "$(command -v greadlink >/dev/null 2>&1 && greadlink -f "$0" || r
 # The basename of our binary
 BASE="overseer"
 
-OUT_DIR="$DIR/bin"
+OUT_DIR="$DIR/../bin"
 mkdir -p "$OUT_DIR"
 
 #
@@ -19,8 +19,6 @@ for OS in ${BUILD_PLATFORMS[@]}; do
 
     # For each arch
     for ARCH in ${BUILD_ARCHS[@]}; do
-
-        cd ${DIR}
 
         # Setup a suffix for the binary
         SUFFIX="${OS}"
@@ -53,16 +51,15 @@ for OS in ${BUILD_PLATFORMS[@]}; do
         fi
 
         # Build the main-binary
-        go build -ldflags "-X main.version=$(git describe --tags 2>/dev/null || echo 'master')" -o "${OUT_DIR}/${BASE}-${SUFFIX}"
+        go build -ldflags "-X main.version=$(git describe --tags 2>/dev/null || echo 'master')" -o "${OUT_DIR}/${BASE}-${SUFFIX}" "$DIR/.."
 
         # Build each bridge
-        for br in ${DIR}/bridges/*/; do
+        for br in ${DIR}/../bridges/*/; do
 
             bridge=$(basename $br)
 
             # Build the bridge I use
-            cd ${br}
-            go build -o "${OUT_DIR}/${bridge}-${SUFFIX}"
+            go build -o "${OUT_DIR}/${bridge}-${SUFFIX}" "${br}/main.go"
 
         done
     done

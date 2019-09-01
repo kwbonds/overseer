@@ -24,8 +24,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
-	"github.com/skx/overseer/test"
 )
 
 // The url we notify

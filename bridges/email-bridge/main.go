@@ -19,11 +19,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/skx/overseer/test"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"text/template"
+
+	"github.com/cmaster11/overseer/test"
 
 	"github.com/go-redis/redis"
 )

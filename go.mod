@@ -1,4 +1,4 @@
-module github.com/skx/overseer
+module github.com/cmaster11/overseer
 
 go 1.12
 

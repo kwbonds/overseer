@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // SSLTest is our object.

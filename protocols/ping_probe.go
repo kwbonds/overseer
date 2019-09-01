@@ -19,7 +19,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 )
 
 // PINGTest is our object.

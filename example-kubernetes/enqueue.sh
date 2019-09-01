@@ -5,5 +5,5 @@ RULE="$1"
 
 (echo "$RULE" | kubectl -n overseer run --restart=Never -i enqueue-manual \
   --image="cmaster11/overseer:docker-1.9-0" \
-  -- enqueue -redis-host redis:6379 - || true) && \
+  -- enqueue -redis-host redis:6379 - || true) &&
   kubectl -n overseer delete pod enqueue-manual

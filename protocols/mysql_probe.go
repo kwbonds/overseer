@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-sql-driver/mysql"
-	"github.com/skx/overseer/test"
 )
 
 // MYSQLTest is our object
