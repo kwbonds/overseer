@@ -6,7 +6,7 @@ RUN apk update && apk upgrade && \
     apk add --no-cache gcc g++ git ca-certificates && update-ca-certificates
 
 WORKDIR /build
-ADD .. .
+ADD . .
 
 # Build the binary
 RUN go build -ldflags "-X main.version=$(git describe --tags 2>/dev/null || echo 'master')" -a -o /go/bin/main .
