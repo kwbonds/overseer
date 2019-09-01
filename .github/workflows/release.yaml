@@ -3,7 +3,6 @@ name: Handle Release
 jobs:
   upload-to-docker-hub:
     name: Upload to Docker Hub
-    runs-on: ubuntu-latest
     steps:
       - name: Docker login
         uses: actions/docker/login@master
@@ -11,13 +10,15 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build base
-        uses: actions/action-builder/shell@master
+        uses: actions/docker/cli@master
         with:
-          args: build-overseer
+          entrypoint: bash
+          args: scripts/docker-build-hub.sh overseer
       - name: Build webhook bridge
-        uses: actions/action-builder/shell@master
+        uses: actions/docker/cli@master
         with:
-          args: build-overseer-webhook-bridge
+          entrypoint: bash
+          args: scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
   upload-to-github:
     name: Upload to GitHub
     runs-on: ubuntu-latest
