@@ -1,8 +1,24 @@
 on: release
 name: Handle Release
 jobs:
-  upload:
-    name: Upload
+  upload-to-docker-hub:
+    name: Upload to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Build
+        uses: actions/action-builder/docker@master
+        run: make build
+      - name: Docker login
+        uses: actions/docker/login@master
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Publish
+        uses: actions/action-builder/docker@master
+        run: make publish
+  upload-to-github:
+    name: Upload to GitHub
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
