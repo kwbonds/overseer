@@ -5,22 +5,19 @@ jobs:
     name: Upload to Docker Hub
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Build
-        uses: actions/action-builder/docker@master
-        with:
-          entrypoint: make
-          args: build
       - name: Docker login
         uses: actions/docker/login@master
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Publish
-        uses: actions/action-builder/docker@master
+      - name: Build base
+        uses: actions/action-builder/shell@master
         with:
-          entrypoint: make
-          args: publish
+          args: build-overseer
+      - name: Build webhook bridge
+        uses: actions/action-builder/shell@master
+        with:
+          args: build-overseer-webhook-bridge
   upload-to-github:
     name: Upload to GitHub
     runs-on: ubuntu-latest
