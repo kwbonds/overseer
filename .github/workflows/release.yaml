@@ -13,12 +13,12 @@ jobs:
       - name: Build base
         uses: actions/docker/cli@master
         with:
-          entrypoint: bash
+          entrypoint: sh
           args: scripts/docker-build-hub.sh overseer
       - name: Build webhook bridge
         uses: actions/docker/cli@master
         with:
-          entrypoint: bash
+          entrypoint: sh
           args: scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
   upload-to-github:
     name: Upload to GitHub
