@@ -1,31 +1,27 @@
 on: release
 name: Handle Release
 jobs:
-  upload-to-docker-hub:
-    name: Upload to Docker Hub
+  upload:
+    name: Upload
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@master
       - name: Docker login
         uses: actions/docker/login@master
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build base
+      - name: Build docker base
         uses: actions/docker/cli@master
         with:
           entrypoint: sh
           args: scripts/docker-build-hub.sh overseer
-      - name: Build webhook bridge
+      - name: Build docker webhook bridge
         uses: actions/docker/cli@master
         with:
           entrypoint: sh
           args: scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
-  upload-to-github:
-    name: Upload to GitHub
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Upload
+      - name: Upload binaries
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
