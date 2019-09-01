@@ -8,7 +8,9 @@ jobs:
       - uses: actions/checkout@master
       - name: Build
         uses: actions/action-builder/docker@master
-        run: make build
+        with:
+          entrypoint: make
+          args: build
       - name: Docker login
         uses: actions/docker/login@master
         env:
@@ -16,7 +18,9 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Publish
         uses: actions/action-builder/docker@master
-        run: make publish
+        with:
+          entrypoint: make
+          args: publish
   upload-to-github:
     name: Upload to GitHub
     runs-on: ubuntu-latest
