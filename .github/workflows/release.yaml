@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      # Store current git tag
+      - run: |
+          git describe --tags 2>/dev/null > DOCKER_BUILD_VERSION
       - name: Docker login
         uses: actions/docker/login@master
         env:

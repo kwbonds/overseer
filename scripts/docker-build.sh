@@ -9,6 +9,8 @@ IMAGE_NAME="${1:-overseer}"
 DOCKERFILE="${2:-$DEFAULT_DOCKERFILE}"
 
 # ---
-VERSION=$(git describe --tags 2>/dev/null || echo 'master')
+DEFAULT_VERSION=$(git describe --tags 2>/dev/null || echo 'master')
+FILE_VERSION=$(cat "$DIR/../DOCKER_BUILD_VERSION" || echo "$DEFAULT_VERSION")
+VERSION="${DOCKER_BUILD_VERSION:-$FILE_VERSION}"
 
 docker build -t "$IMAGE_NAME:$VERSION" -f "$DIR/$DOCKERFILE" "$DIR/.."
