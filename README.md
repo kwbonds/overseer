@@ -3,7 +3,8 @@
 
 # DISCLAIMER
 
-This project is a heavily modified version of the amazing [skx/overseer](https://github.com/skx/overseer), compatibility between the two projects's data is not guaranteed, and should not be expected.
+This project is a heavily modified version of the amazing [skx/overseer](https://github.com/skx/overseer) project. 
+Compatibility between the two projects's data is not guaranteed, and should not be expected.
 
 Table of Contents
 =================
