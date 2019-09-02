@@ -15,14 +15,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	// Import all auth methods k8s
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// K8SSvcTest is our object.
 type K8SSvcTest struct {
 }
 
@@ -36,6 +38,7 @@ func (s *K8SSvcTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *K8SSvcTest) ShouldResolveHostname() bool {
 	return false
 }

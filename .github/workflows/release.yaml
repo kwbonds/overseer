@@ -1,0 +1,35 @@
+on:
+  push:
+    tags:
+      - release-*
+name: Handle push tag
+jobs:
+  upload:
+    name: Upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      # Store current git tag
+      - run: |
+          git describe --tags 2>/dev/null > DOCKER_BUILD_VERSION
+      - name: Docker login
+        uses: actions/docker/login@master
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build docker base
+        uses: actions/docker/cli@master
+        with:
+          entrypoint: sh
+          args: scripts/docker-build-hub.sh overseer Dockerfile
+      - name: Build docker webhook bridge
+        uses: actions/docker/cli@master
+        with:
+          entrypoint: sh
+          args: scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
+      - name: Upload binaries
+        uses: skx/github-action-publish-binaries@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: 'bin/*-*'

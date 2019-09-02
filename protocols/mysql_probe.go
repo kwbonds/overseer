@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-sql-driver/mysql"
-	"github.com/skx/overseer/test"
 )
 
 // MYSQLTest is our object
@@ -38,6 +38,7 @@ func (s *MYSQLTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *MYSQLTest) ShouldResolveHostname() bool {
 	return true
 }

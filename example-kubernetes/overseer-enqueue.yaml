@@ -1,0 +1,49 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: overseer-enqueue
+  namespace: overseer
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: overseer-worker
+              image: cmaster11/overseer:docker-1.9-0
+              args:
+                - enqueue
+                - -redis-host
+                - redis:6379
+                - /opt/checks/checks.list
+              volumeMounts:
+                - name: overseer-checks
+                  mountPath: /opt/checks
+          volumes:
+            - name: overseer-checks
+              configMap:
+                name: overseer-checks
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: overseer
+  name: overseer-checks
+data:
+  checks.list: |
+
+    # Example internal k8s check.
+    # Monitors that provided k8s service has > 0 endpoints available.
+    default/kubernetes must run k8s-svc
+
+    # Example external monitoring of SSL certificates
+    https://www.google.com must run ssl
+
+    # Failing test, re-notifying every 10m
+    # https://omgidontexistforreal.com must run https

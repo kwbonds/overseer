@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"sort"
 
+	"github.com/cmaster11/overseer/protocols"
 	"github.com/google/subcommands"
-	"github.com/skx/overseer/protocols"
 )
 
 type examplesCmd struct {

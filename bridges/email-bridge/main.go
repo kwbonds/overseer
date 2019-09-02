@@ -19,11 +19,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/skx/overseer/test"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"text/template"
+
+	"github.com/cmaster11/overseer/test"
 
 	"github.com/go-redis/redis"
 )
@@ -33,10 +34,6 @@ var email *string
 
 // The redis handle
 var r *redis.Client
-
-// The redis connection details
-var redisHost *string
-var redisPass *string
 
 // Template is our text/template which is used to generate the email
 // notification to the user.
@@ -103,7 +100,7 @@ func process(msg []byte) {
 	src := string(Template)
 	t := template.Must(template.New("tmpl").Parse(src))
 	buf := &bytes.Buffer{}
-	err := t.Execute(buf, x)
+	err = t.Execute(buf, x)
 	if err != nil {
 		fmt.Printf("Failed to compile email-template %s\n", err.Error())
 		return
@@ -193,7 +190,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	for true {
+	for {
 
 		//
 		// Get test-results

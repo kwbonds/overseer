@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"strings"
 
-	client "github.com/emersion/go-imap/client"
-	"github.com/skx/overseer/test"
+	"github.com/cmaster11/overseer/test"
+	"github.com/emersion/go-imap/client"
 )
 
 // IMAPSTest is our object
@@ -42,6 +42,7 @@ func (s *IMAPSTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *IMAPSTest) ShouldResolveHostname() bool {
 	return true
 }

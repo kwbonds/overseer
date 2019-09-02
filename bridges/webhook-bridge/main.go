@@ -24,8 +24,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
-	"github.com/skx/overseer/test"
 )
 
 // The url we notify
@@ -35,10 +35,6 @@ var sendTestRecovered *bool
 
 // The redis handle
 var r *redis.Client
-
-// The redis connection details
-var redisHost *string
-var redisPass *string
 
 //
 // Given a JSON string decode it and post it via webhook if it describes
@@ -141,7 +137,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	for true {
+	fmt.Printf("webhook bridge started with url %s\n", *webhookURL)
+
+	for {
 
 		//
 		// Get test-results

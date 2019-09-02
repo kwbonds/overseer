@@ -5,9 +5,10 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/skx/overseer/utils"
+	"github.com/cmaster11/overseer/utils"
 )
 
+// Result contains a single test result
 type Result struct {
 	Input  string `json:"input"`
 	Target string `json:"target"`
@@ -25,12 +26,12 @@ type Result struct {
 	Recovered bool `json:"recovered"`
 }
 
-// Generated a unique identifier for the original test (e.g. to deduplicate same results)
+// Hash generates a unique identifier for the original test (e.g. to deduplicate same results)
 func (result *Result) Hash() string {
 	return utils.GetMD5Hash(result.Input + result.Target + result.Type + result.Tag)
 }
 
-// Old-overseer-code compatible struct
+// ResultFromJSON creates an old-overseer-code compatible struct
 func ResultFromJSON(msg []byte) (*Result, error) {
 	testResult := new(Result)
 
@@ -71,6 +72,7 @@ func ResultFromJSON(msg []byte) (*Result, error) {
 	return testResult, nil
 }
 
+// ResultLegacy contains an old overseer style test result
 type ResultLegacy struct {
 	Input  string `json:"input"`
 	Target string `json:"target"`

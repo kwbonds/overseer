@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/cmaster11/overseer/test"
 	_ "github.com/lib/pq" // Don't need to import this
-	"github.com/skx/overseer/test"
 )
 
 // PSQLTest is our object
@@ -43,6 +43,7 @@ func (s *PSQLTest) Arguments() map[string]string {
 	return known
 }
 
+// ShouldResolveHostname returns if this protocol requires the hostname resolution of the first test argument
 func (s *PSQLTest) ShouldResolveHostname() bool {
 	return true
 }
