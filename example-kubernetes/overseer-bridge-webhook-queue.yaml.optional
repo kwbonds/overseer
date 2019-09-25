@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overseer-bridge-queue
+  namespace: overseer
+  labels:
+    app: overseer-bridge-queue
+spec:
+  selector:
+    matchLabels:
+      app: overseer-bridge-queue
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: overseer-bridge-queue
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - overseer-bridge-queue
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: overseer-bridge-queue
+          image: cmaster11/overseer-queue-bridge:release-1.9-16
+          args:
+            - -redis-host
+            - redis:6379
+            - -destination-queues
+            - overseer.results.email,overseer.results.n17

@@ -27,10 +27,13 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: overseer-bridge-webhook-n17
-          image: cmaster11/overseer-webhook-bridge:docker-1.9-0
+          image: cmaster11/overseer-webhook-bridge:release-1.9-16
           args:
             - -redis-host
             - redis:6379
+            # If using the webhook queue to clone test results
+            #            - -redis-queue-key
+            #            - "overseer.results.n17"
             # Url where to send tests' results
             - -url
             - "https://hook.notify17.net/api/template/REPLACE_TEMPLATE_API_KEY"

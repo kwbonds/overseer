@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overseer-bridge-email
+  namespace: overseer
+  labels:
+    app: overseer-bridge-email
+spec:
+  selector:
+    matchLabels:
+      app: overseer-bridge-email
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: overseer-bridge-email
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - overseer-bridge-email
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: overseer-bridge-email
+          image: cmaster11/overseer-email-bridge:release-1.9-16
+          # SMTP username/password from env
+          #          env:
+          #            - name: SMTP_USERNAME
+          #              valueFrom:
+          #                secretKeyRef:
+          #                  name: email-auth
+          #                  key: username
+          #            - name: SMTP_PASSWORD
+          #              valueFrom:
+          #                secretKeyRef:
+          #                  name: email-auth
+          #                  key: password
+          args:
+            - -redis-host
+            - redis:6379
+            - -smtp-host
+            - "smtp.google.com"
+            - -smtp-port
+            - "587"
+            # If using the webhook queue to clone test results
+            #            - -redis-queue-key
+            #            - "overseer.results.email"
+            # SMTP username/password from env
+            #            - -smtp-username
+            #            - $(SMTP_USERNAME)
+            #            - -smtp-password
+            #            - $(SMTP_PASSWORD)
+            - -smtp-username
+            - "hello@google.com"
+            - -smtp-password
+            - "pwdddd"
+            - -send-test-recovered=true
+            - -email
+            - "alerts@company.com"

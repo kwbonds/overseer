@@ -16,7 +16,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: overseer-worker
-              image: cmaster11/overseer:docker-1.9-0
+              image: cmaster11/overseer:release-1.9-16
               args:
                 - enqueue
                 - -redis-host
