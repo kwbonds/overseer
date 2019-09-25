@@ -174,7 +174,7 @@ func main() {
 	//
 	redisHost := flag.String("redis-host", "127.0.0.1:6379", "Specify the address of the redis queue.")
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
-	redisQueueKey := flag.String("redis-key", "overseer.results", "Specify the redis queue name to use.")
+	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use.")
 
 	smtpHost := flag.String("smtp-host", "smtp.gmail.com", "The SMTP host")
 	smtpPort := flag.Uint("smtp-port", 587, "The SMTP port")

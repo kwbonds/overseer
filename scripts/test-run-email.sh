@@ -6,7 +6,7 @@ REDIS_QUEUE_KEY="${REDIS_QUEUE_KEY:-overseer.results}"
 
 # Runs a test-result listener, which sends a webhook req to our http dump
 go run "$DIR/../bridges/email-bridge/." \
-  -redis-key "$REDIS_QUEUE_KEY" \
+  -redis-queue-key "$REDIS_QUEUE_KEY" \
   -smtp-host "smtp.elasticemail.com" \
   -smtp-port 2525 \
   -smtp-username "$EMAIL_USERNAME" \

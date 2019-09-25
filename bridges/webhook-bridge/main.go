@@ -102,7 +102,7 @@ func main() {
 	//
 	redisHost := flag.String("redis-host", "127.0.0.1:6379", "Specify the address of the redis queue.")
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
-	redisQueueKey := flag.String("redis-key", "overseer.results", "Specify the redis queue name to use.")
+	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use.")
 
 	webhookURL = flag.String("url", "", "The url address to notify")
 	sendTestSuccess = flag.Bool("send-test-success", false, "Send also test results when successful")

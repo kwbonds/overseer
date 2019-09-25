@@ -5,10 +5,15 @@
 //
 // Once built launch it as follows:
 //
-//     $ ./queue-bridge [-redis-key=overseer.results] -destination-queues=overseer.results.queue,overseer.results.webhook
+//     $ ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.email,overseer.results.webhook
 //
 // When a test is provided on the source queue, it gets cloned into the destination queues.
 // This helps using multiple bridges, e.g. to send an queue and a webhook for each test result.
+//
+// When the queue bridge is used, the email and webhook bridges can be started like:
+//
+// 	   $ ./email-bridge -email=sysadmin@example.com,hello@gmail.com -redis-queue-key overseer.results.email
+// 	   $ ./webhook-bridge -url=https://example.com/bla -redis-queue-key overseer.results.webhook
 //
 // Alberto
 // --
@@ -62,7 +67,7 @@ func main() {
 	//
 	redisHost := flag.String("redis-host", "127.0.0.1:6379", "Specify the address of the redis queue.")
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
-	redisQueueKey := flag.String("redis-key", "overseer.results", "Specify the redis queue name to use as source.")
+	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use as source.")
 
 	queuesStr := flag.String("destination-queues", "", "The redis queues to clone results into")
 
@@ -82,7 +87,7 @@ func main() {
 	// Sanity-check.
 	//
 	if len(queuesValid) == 0 {
-		fmt.Printf("Usage: ./queue-bridge [-redis-key=overseer.results] -destination-queues=overseer.results.queue,overseer.results.webhook\n")
+		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.queue,overseer.results.webhook\n")
 		os.Exit(1)
 	}
 
