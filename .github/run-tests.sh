@@ -21,7 +21,7 @@ set -e
 
 # Run the linter
 echo "Launching linter .."
-golint -set_exit_status ./...
+golint ./...
 echo "Completed linter .."
 
 # Run the shadow-checker
