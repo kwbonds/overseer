@@ -1,13 +1,15 @@
 #!/bin/sh
+set -e
+DIR="$(dirname "$(command -v greadlink >/dev/null 2>&1 && greadlink -f "$0" || readlink -f "$0")")"
 
 # Install tools to test our code-quality.
 go get -u golang.org/x/lint/golint
-go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
+go install "$DIR/shadow-fix.go"
 go get -u honnef.co/go/tools/cmd/staticcheck
 
 # Run the static-check tool
 t=$(mktemp)
-staticcheck -checks all ./... | grep -v " is overwritten before first use " >$t
+staticcheck -checks all ./... | grep -v " is overwritten before first use " >$t || true
 if [ -s $t ]; then
   echo "Found errors via 'staticcheck'"
   cat $t
@@ -16,17 +18,14 @@ if [ -s $t ]; then
 fi
 rm $t
 
-# At this point failures cause aborts
-set -e
-
 # Run the linter
 echo "Launching linter .."
-golint -set_exit_status ./...
+golint ./...
 echo "Completed linter .."
 
 # Run the shadow-checker
 echo "Launching shadowed-variable check .."
-go vet -vettool=$(which shadow) ./...
+go vet -vettool=$(which shadow-fix) ./...
 echo "Completed shadowed-variable check .."
 
 # Run golang tests

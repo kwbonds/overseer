@@ -64,6 +64,8 @@ func process(msg []byte) {
 		return
 	}
 
+	fmt.Printf("Processing result: %+v\n", testResult)
+
 	res, err := http.Post(*webhookURL, "application/json", bytes.NewBuffer(msg))
 	if err != nil {
 		fmt.Printf("Failed to execute webhook request: %s\n", err.Error())
@@ -100,6 +102,8 @@ func main() {
 	//
 	redisHost := flag.String("redis-host", "127.0.0.1:6379", "Specify the address of the redis queue.")
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
+	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use.")
+
 	webhookURL = flag.String("url", "", "The url address to notify")
 	sendTestSuccess = flag.Bool("send-test-success", false, "Send also test results when successful")
 	sendTestRecovered = flag.Bool("send-test-recovered", false, "Send also test results when a test recovers from failure (valid only when used together with deduplication rules)")
@@ -144,7 +148,7 @@ func main() {
 		//
 		// Get test-results
 		//
-		msg, _ := r.BLPop(0, "overseer.results").Result()
+		msg, _ := r.BLPop(0, *redisQueueKey).Result()
 
 		//
 		// If they were non-empty, process them.
