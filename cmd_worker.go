@@ -758,7 +758,7 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	//
 	parse := parser.New()
 
-	fmt.Println("worker started")
+	fmt.Printf("worker started [tag=%s]", p.Tag)
 
 	//
 	// Wait for jobs, in a blocking-manner.

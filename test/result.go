@@ -31,7 +31,7 @@ func (result *Result) Hash() string {
 	return utils.GetMD5Hash(result.Input + result.Target + result.Type + result.Tag)
 }
 
-// ResultFromJSON creates an old-overseer-code compatible struct
+// ResultFromJSON creates a result struct from a JSON payload
 func ResultFromJSON(msg []byte) (*Result, error) {
 	testResult := new(Result)
 
@@ -70,16 +70,4 @@ func ResultFromJSON(msg []byte) (*Result, error) {
 	}
 
 	return testResult, nil
-}
-
-// ResultLegacy contains an old overseer style test result
-type ResultLegacy struct {
-	Input  string `json:"input"`
-	Target string `json:"target"`
-	Time   string `json:"time"`
-	Type   string `json:"type"`
-	Tag    string `json:"tag"`
-
-	// If not nil, test has failed
-	Error *string `json:"error"`
 }

@@ -1,6 +1,2 @@
-bridges/email-bridge
-bridges/irc-bridge
-bridges/purppura-bridge
-bridges/webhook-bridge
 .idea
 bin

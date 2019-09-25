@@ -5,11 +5,11 @@
 //
 // Once built launch it as follows:
 //
-//     $ ./email-bridge -email=sysadmin@example.com
+//     $ ./email-bridge -email=sysadmin@example.com,hello@gmail.com
 //
-// When a test fails an email will sent, by executing /usr/sbin/sendmail.
+// When a test fails an email will sent via SMTP
 //
-// Steve
+// Alberto
 // --
 //
 
@@ -19,132 +19,145 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"text/template"
-
 	"github.com/cmaster11/overseer/test"
+	"github.com/cmaster11/overseer/utils"
+	"os"
+	"strings"
+	"text/template"
+	"time"
 
 	"github.com/go-redis/redis"
 )
 
-// The email we notify
-var email *string
+// TemplateSubject is our text/template which is used to generate the email
+// subject to the user.
+var TemplateSubject = `Overseer [
+{{- if .error -}}
+	ERR
+	{{- if .isDedup -}}
+	-DUP
+	{{- end -}}
+{{- else -}}
+	{{- if .recovered -}}
+	RECOVERED
+	{{- else -}}
+	OK
+	{{- end -}}
+{{- end -}}
+]
+{{- if .tag}} ({{.tag}}){{- end -}}
+: {{.input}} ({{.date}})`
 
-// The redis handle
-var r *redis.Client
-
-// Template is our text/template which is used to generate the email
+// TemplateBody is our text/template which is used to generate the email
 // notification to the user.
-var Template = `From: {{.From}}
-To: {{.To}}
-Subject: The {{.Type}} test failed against {{.Target}}
+var TemplateBody = `
+Overseer: 
+{{- if .error -}}
+	Error
+	{{- if .isDedup}} (duplicated){{end -}}
+	: {{.error}}
+{{- else -}}
+	{{- if .recovered -}}
+	Test recovered
+	{{- else -}}
+	Test ok
+	{{- end -}}
+{{- end}}
 
-The {{.Type}} test failed against {{.Target}}.
+Tag: {{if .tag}}{{.tag}}{{else}}None{{end}}
+Input: {{.input}}
 
-The complete test was:
-
-   {{.Input}}
-
-The failure was:
-
-   {{.Failure}}
-
+Target: {{ .target }}
+Type: {{ .type }}
+Date: {{ .date }}
 `
+
+type EmailBridge struct {
+	Sender *utils.EmailSender
+
+	// The email we notify
+	Emails []string
+
+	SendTestSuccess   bool
+	SendTestRecovered bool
+}
 
 //
 // Given a JSON string decode it and post it via email if it describes
 // a test-failure.
 //
-func process(msg []byte) {
+func (bridge *EmailBridge) Process(msg []byte) {
 	testResult, err := test.ResultFromJSON(msg)
 	if err != nil {
 		panic(err)
 	}
 
-	//
-	// If the test passed then we don't care.
-	//
+	// If the test passed then we don't care, unless otherwise defined
+	shouldSend := true
 	if testResult.Error == nil {
+		shouldSend = false
+
+		if bridge.SendTestSuccess {
+			shouldSend = true
+		}
+
+		if bridge.SendTestRecovered && testResult.Recovered {
+			shouldSend = true
+		}
+	}
+
+	if !shouldSend {
 		return
 	}
 
-	//
-	// Here is a temporary structure we'll use to popular our email
-	// template.
-	//
-	type TemplateParms struct {
-		To      string
-		From    string
-		Target  string
-		Type    string
-		Input   string
-		Failure string
-	}
+	fmt.Printf("Processing result: %+v\n", testResult)
 
-	//
-	// Populate it appropriately.
-	//
-	var x TemplateParms
-	x.To = *email
-	x.From = *email
-	x.Type = testResult.Type
-	x.Target = testResult.Target
-	x.Input = testResult.Input
-	x.Failure = *testResult.Error
+	templateMap := map[string]interface{}{
+		"error":     testResult.Error,
+		"isDedup":   testResult.IsDedup,
+		"recovered": testResult.Recovered,
+		"tag":       testResult.Tag,
+		"target":    testResult.Target,
+		"input":     testResult.Input,
+		"type":      testResult.Type,
+		"date":      time.Now().UTC().String(),
+	}
 
 	//
 	// Render our template into a buffer.
 	//
-	src := string(Template)
-	t := template.Must(template.New("tmpl").Parse(src))
-	buf := &bytes.Buffer{}
-	err = t.Execute(buf, x)
-	if err != nil {
-		fmt.Printf("Failed to compile email-template %s\n", err.Error())
-		return
+	var subject, body string
+
+	{
+		src := string(TemplateSubject)
+		t := template.Must(template.New("tmpl").Parse(src))
+		buf := &bytes.Buffer{}
+		err = t.Execute(buf, templateMap)
+		if err != nil {
+			fmt.Printf("Failed to compile email-template subject %s\n", err.Error())
+			return
+		}
+
+		subject = buf.String()
 	}
 
-	//
-	// Prepare to run sendmail, with a pipe we can write our message to.
-	//
-	sendmail := exec.Command("/usr/sbin/sendmail", "-f", *email, *email)
-	stdin, err := sendmail.StdinPipe()
-	if err != nil {
-		fmt.Printf("Error sending email: %s\n", err.Error())
-		return
+	{
+		src := strings.TrimSpace(string(TemplateBody))
+		t := template.Must(template.New("tmpl").Parse(src))
+		buf := &bytes.Buffer{}
+		err = t.Execute(buf, templateMap)
+		if err != nil {
+			fmt.Printf("Failed to compile email-template body %s\n", err.Error())
+			return
+		}
+
+		body = buf.String()
 	}
 
-	//
-	// Get the output pipe.
-	//
-	stdout, err := sendmail.StdoutPipe()
-	if err != nil {
-		fmt.Printf("Error sending email: %s\n", err.Error())
-		return
-	}
+	// Prepare email to send
+	message := bridge.Sender.WritePlainEmail(bridge.Emails, subject, body)
 
-	//
-	// Run the command, and pipe in the rendered template-result
-	//
-	sendmail.Start()
-	_, err = stdin.Write(buf.Bytes())
-	if err != nil {
-		fmt.Printf("Failed to write to sendmail pipe: %s\n", err.Error())
-	}
-	stdin.Close()
-
-	//
-	// Read the output of Sendmail.
-	//
-	_, err = ioutil.ReadAll(stdout)
-	if err != nil {
-		fmt.Printf("Error reading mail output: %s\n", err.Error())
-		return
-	}
-
-	err = sendmail.Wait()
+	err = bridge.Sender.SendRawMail(bridge.Emails, message)
 
 	if err != nil {
 		fmt.Printf("Waiting for process to terminate failed: %s\n", err.Error())
@@ -161,13 +174,35 @@ func main() {
 	//
 	redisHost := flag.String("redis-host", "127.0.0.1:6379", "Specify the address of the redis queue.")
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
-	email = flag.String("email", "", "The email address to notify")
+	redisQueueKey := flag.String("redis-key", "overseer.results", "Specify the redis queue name to use.")
+
+	smtpHost := flag.String("smtp-host", "smtp.gmail.com", "The SMTP host")
+	smtpPort := flag.Uint("smtp-port", 587, "The SMTP port")
+	smtpUsername := flag.String("smtp-username", "", "The SMTP username")
+	smtpPassword := flag.String("smtp-password", "", "The SMTP password")
+
+	emailStr := flag.String("email", "", "The email addresses to notify, separated by comma")
+	sendTestSuccess := flag.Bool("send-test-success", false, "Send also test results when successful")
+	sendTestRecovered := flag.Bool("send-test-recovered", false, "Send also test results when a test recovers from failure (valid only when used together with deduplication rules)")
+
 	flag.Parse()
+
+	emailSender := utils.NewEmailSender(*smtpHost, *smtpPort, *smtpUsername, *smtpPassword)
+
+	emailsSplit := strings.Split(*emailStr, ",")
+	var emailsValid []string
+	for _, email := range emailsSplit {
+		if email == "" {
+			continue
+		}
+
+		emailsValid = append(emailsValid, email)
+	}
 
 	//
 	// Sanity-check.
 	//
-	if *email == "" {
+	if len(emailsValid) == 0 {
 		fmt.Printf("Usage: email-bridge -email=sysadmin@example.com [-redis-host=127.0.0.1:6379] [-redis-pass=foo]\n")
 		os.Exit(1)
 	}
@@ -175,7 +210,7 @@ func main() {
 	//
 	// Create the redis client
 	//
-	r = redis.NewClient(&redis.Options{
+	r := redis.NewClient(&redis.Options{
 		Addr:     *redisHost,
 		Password: *redisPass,
 		DB:       0, // use default DB
@@ -190,12 +225,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	bridge := EmailBridge{
+		Sender:            emailSender,
+		Emails:            emailsValid,
+		SendTestRecovered: *sendTestRecovered,
+		SendTestSuccess:   *sendTestSuccess,
+	}
+
 	for {
 
 		//
 		// Get test-results
 		//
-		msg, _ := r.BLPop(0, "overseer.results").Result()
+		msg, _ := r.BLPop(0, *redisQueueKey).Result()
 
 		//
 		// If they were non-empty, process them.
@@ -205,7 +247,7 @@ func main() {
 		//   msg[1] will be the value removed from the list.
 		//
 		if len(msg) >= 1 {
-			process([]byte(msg[1]))
+			bridge.Process([]byte(msg[1]))
 		}
 	}
 }

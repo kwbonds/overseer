@@ -27,6 +27,16 @@ jobs:
         with:
           entrypoint: sh
           args: scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
+      - name: Build docker email bridge
+        uses: actions/docker/cli@master
+        with:
+          entrypoint: sh
+          args: scripts/docker-build-hub.sh overseer-email-bridge Dockerfile.email-bridge
+      - name: Build docker queue bridge
+        uses: actions/docker/cli@master
+        with:
+          entrypoint: sh
+          args: scripts/docker-build-hub.sh overseer-queue-bridge Dockerfile.queue-bridge
       - name: Upload binaries
         uses: skx/github-action-publish-binaries@master
         env:
