@@ -3,7 +3,7 @@
 
 # DISCLAIMER
 
-This project is a heavily modified version of the amazing [skx/overseer](https://github.com/skx/overseer) project. 
+This project is a heavily modified version of the amazing [skx/overseer](https://github.com/skx/overseer) one. 
 Compatibility between the two projects's data is not guaranteed, and should not be expected.
 
 Table of Contents
@@ -20,7 +20,6 @@ Table of Contents
   * [Deduplication](#deduplication)
 * [Metrics](#metrics)
 * [Redis Specifics](#redis-specifics)
-
 
 # Overseer
 
@@ -64,8 +63,6 @@ You can see what the available tests look like in [the sample test-file](input.t
 
 All protocol-tests transparently support testing IPv4 and IPv6 targets, although you may globally disable either address family if you wish.
 
-
-
 ## Installation
 
 To install locally the project:
@@ -73,7 +70,6 @@ To install locally the project:
     git clone https://github.com/cmaster11/overseer
     cd overseer
     go install
-
 
 ### Kubernetes
 
@@ -93,7 +89,7 @@ or number of workers, poll the queue fetching & executing jobs as they become
 available.
 
 In small-scale deployments it is probably sufficient to have a single worker,
-and all the software running upon a single host.  For a larger number of
+and all the software running upon a single host. For a larger number of
 tests (1000+) it might make more sense to have a pool of hosts each running
 a worker.
 
@@ -101,8 +97,6 @@ Because we don't want to be tied to a specific notification-system results
 of each test are also posted to the same redis-host, which allows results to be retrieved and transmitted to your preferred notifier.
 
 More details about [notifications](#notifications) are available later in this document.
-
-
 
 ## Executing Tests
 
@@ -113,7 +107,7 @@ As mentioned already executing tests a two-step process:
 
 This might seem a little convoluted, however it is a great design if you
 have a lot of tests to be executed, because it allows you to deploy multiple
-workers.  Instead of having a single host executing all the tests you can
+workers. Instead of having a single host executing all the tests you can
 can have 10 hosts, each watching the same redis-queue pulling jobs, & executing
 them as they become available.
 
@@ -125,20 +119,19 @@ To add your tests to the queue you should run:
            -redis-host=queue.example.com:6379 [-redis-pass='secret.here'] \
            test.file.1 test.file.2 .. test.file.N
 
-This will parse the tests contained in the specified files, adding each of them to the (shared) redis queue.  Once all of the jobs have been parsed and inserted into the queue the process will terminate.
+This will parse the tests contained in the specified files, adding each of them to the (shared) redis queue. 
+Once all of the jobs have been parsed and inserted into the queue the process will terminate.
 
 To drain the queue you can should now start a worker, which will fetch the tests and process them:
 
        $ overseer worker -verbose \
           -redis-host=queue.example.com:6379 [-redis-pass='secret']
 
-The worker will run constantly, not terminating unless manually killed.  With
+The worker will run constantly, not terminating unless manually killed. With
 the worker running you can add more jobs by re-running the `overseer enqueue`
 command.
 
 To run tests in parallel simply launch more instances of the worker, on the same host, or on different hosts.
-
-
 
 ### Running Automatically
 
@@ -148,8 +141,6 @@ Beneath [systemd/](systemd/) you will find some sample service-files which can b
   * The redis-server is assumed to be running on `localhost`.
 * A service & timer to regularly populate the queue with fresh jobs to be executed.
   * i.e. The first service is the worker, this second one feeds the worker.
-
-
 
 ### Smoothing Test Failures
 
@@ -164,8 +155,6 @@ If you're absolutely certain that your connectivity is good, and that
 alerts should always be raised for failing services you can disable this
 retry-logic via the command-line flag `-retry=false`.
 
-
-
 ## Notifications
 
 The result of each test is submitted to the central redis-host, from where it can be pulled and used to notify a human of a problem.
@@ -174,9 +163,9 @@ Sample result-processors are [included](bridges/) in this repository which post 
 
 The sample bridges are primarily included for demonstration purposes, the
 expectation is you'll prefer to process the results and issue notifications to
-humans via your favourite in-house tool - be it pagerduty, or something similar.
+humans via your favourite in-house tool - be it [Notify17](https://notify17.net), or something similar.
 
-The results themselves are published as JSON objects to the `overseer.results` set.   Your notifier should remove the results from this set, as it generates alerts to prevent it from growing indefinitely.
+The results themselves are published as JSON objects to the `overseer.results` set. Your notifier should remove the results from this set, as it generates alerts to prevent it from growing indefinitely.
 
 You can check the size of the results set at any time via `redis-cli` like so:
 
@@ -203,15 +192,21 @@ As mentioned this repository contains some demonstration "[bridges](bridges/)", 
   * Forwards each test-result to a generic URL (e.g. to trigger notifications with [Notify17](https://notify17.net)).
   * If started with the flag `-send-test-recovered=true`, tests which recovered from failure (see [deduplication](#deduplication)) are sent.
   * If started with the flag `-send-test-success=true`, successful tests are sent.
+* [`queue-bridge/main.go`](bridges/queue-bridge/main.go)
+  * Clones test results to multiple `-destionation-queues`, so that the can be processed by multiple other bridges, like email and webhook ([example](example-kubernetes/README.md#multiple-destinations-eg-notify17-and-email)).
 * [`email-bridge/main.go`](bridges/email-bridge/main.go)
   * This posts test-failures via email.
+  * If started with the flag `-send-test-recovered=true`, tests which recovered from failure (see [deduplication](#deduplication)) are sent.
+  * If started with the flag `-send-test-success=true`, successful tests are sent.
+* [`sendmail-bridge/main.go`](bridges/sendmail-bridge/main.go)
+  * This posts test-failures via sendemail.
   * Tests which pass are not reported.
 * [`purppura-bridge/main.go`](bridges/purppura-bridge/main.go)
   * This forwards each test-result to a [purppura host](https://github.com/skx/purppura/).
   
 ## Deduplication
 
-**Disclaimer**: deduplication has been fully developed only for the [webhook](bridges/webhook-bridge/main.go) bridge.
+**Disclaimer**: deduplication has been fully developed only for the [webhook](bridges/webhook-bridge/main.go) and [email](bridges/email-bridge/main.go) bridges.
 
 It is possible to enable the deduplication of alerts by using the `with dedup 5m` rule, or by starting `overseer worker` with the `-dedup=5m` flag.
 
@@ -236,14 +231,12 @@ Overseer has built-in support for exporting metrics to a remote carbon-server:
 To enable this support simply export the environmental variable `METRICS`
 with the hostname of your remote metrics-host prior to launching the worker.
 
-
-
 ## Redis Specifics
 
 We use Redis as a queue as it is simple to deploy, stable, and well-known.
 
 Redis doesn't natively operate as a queue, so we replicate this via the "list"
-primitives.  Adding a job to a queue is performed via a "[rpush](https://redis.io/commands/rpush)" operation, and pulling a job from the queue is achieved via an "[blpop](https://redis.io/commands/blpop)" command.
+primitives. Adding a job to a queue is performed via a "[rpush](https://redis.io/commands/rpush)" operation, and pulling a job from the queue is achieved via an "[blpop](https://redis.io/commands/blpop)" command.
 
 We use the following two lists as queues:
 
