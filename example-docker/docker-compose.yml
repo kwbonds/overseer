@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+
+  # Tests to periodically queue
+  overseer-enqueue:
+    build: './cron'
+    depends_on:
+      - redis
+    volumes:
+      # This file contains the cron definitions to enqueue tests
+      - ./overseer-enqueue.cron:/etc/crontab.list
+      # This file contains the actual tests definitions
+      - ./overseer-tests.list:/opt/overseer-tests.list
+
+  # To execute tests
+  overseer-worker:
+    image: 'cmaster11/overseer:release-1.9-16'
+    depends_on:
+      - redis
+    command:
+      - worker
+      - -redis-host
+      - redis:6379
+      - -verbose
+      # A tag to identify the current overseer workers.
+      # Useful when dealing with multiple overseer workers in multiple Kubernetes clusters.
+      - -tag
+      - docker-test
+      # How many retries do we want for each test, before it can be considered failed?
+      - -retry-count
+      - "2"
+      # How long do we want to wait before being notified again about the same failed test result?
+      - -dedup
+      - "5m"
+      # Overseer by default performs IPv6 checks, when running on local machine this method may not always work
+      # Disable it for this example
+      - -6=false
+
+  # To process test results and generate notifications with Notify17 (https://notify17.net)
+  overseer-webhook-bridge-n17:
+    image: 'cmaster11/overseer-webhook-bridge:release-1.9-16'
+    depends_on:
+      - redis
+    command:
+      - -redis-host
+      - redis:6379
+      - -url
+      - "https://hook.notify17.net/api/template/REPLACE_TEMPLATE_API_KEY"
+      - -send-test-recovered=true
+
+  # To store tests and test results
+  redis:
+    image: 'redis:5'
+    ports:
+      - "6379"

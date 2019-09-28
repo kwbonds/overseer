@@ -1,0 +1,3 @@
+# Sample cron to enqueue overseer jobs
+
+* * * * * /go/bin/main enqueue -redis-host redis:6379 - </opt/overseer-tests.list 2>&1
