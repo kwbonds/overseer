@@ -11,15 +11,13 @@ import (
 	"flag"
 	"fmt"
 	k8seventwatcher "github.com/cmaster11/k8s-event-watcher"
-	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
-	"os"
-	"time"
-
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
 	_ "github.com/skx/golang-metrics"
+	"io/ioutil"
+	v1 "k8s.io/api/core/v1"
+	"os"
 )
 
 // This is our structure, largely populated by command-line arguments
@@ -31,10 +29,10 @@ type k8sEventWatcherCmd struct {
 	EventFilterConfigPath string
 
 	// Default amount of events repetitions before triggering an error
-	MinRepetitions uint
+	//MinRepetitions uint
 
 	// Default deduplication duration
-	DedupDuration time.Duration
+	//DedupDuration time.Duration
 
 	// The redis-host we're going to connect to for our queues.
 	RedisHost string
@@ -51,7 +49,7 @@ type k8sEventWatcherCmd struct {
 	// Tag applied to all results
 	Tag string
 
-	// Should the testing, and the tests, be verbose?
+	// Should the watcher be verbose?
 	Verbose bool
 
 	// The handle to our redis-server
@@ -88,8 +86,8 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 	// via a configuration-file if it is present.
 	//
 	var defaults k8sEventWatcherCmd
-	defaults.MinRepetitions = 0
-	defaults.DedupDuration = 0
+	//defaults.MinRepetitions = 0
+	//defaults.DedupDuration = 0
 	defaults.Tag = ""
 	defaults.Verbose = false
 	defaults.RedisHost = "localhost:6379"
@@ -126,9 +124,9 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.EventFilterConfigPath, "watcher-config", defaults.EventFilterConfigPath, "Event watcher configuration file")
 
 	// Retry
-	f.UintVar(&p.MinRepetitions, "min-repetitions", defaults.MinRepetitions, "How many times to an event has to occur before triggering an error.")
+	//f.UintVar(&p.MinRepetitions, "min-repetitions", defaults.MinRepetitions, "How many times to an event has to occur before triggering an error.")
 
-	f.DurationVar(&p.DedupDuration, "dedup", defaults.DedupDuration, "The maximum duration of a deduplication.")
+	//f.DurationVar(&p.DedupDuration, "dedup", defaults.DedupDuration, "The maximum duration of a deduplication.")
 
 	// Redis
 	f.StringVar(&p.RedisHost, "redis-host", defaults.RedisHost, "Specify the address of the redis queue.")
