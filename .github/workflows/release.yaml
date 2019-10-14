@@ -13,30 +13,18 @@ jobs:
       - run: |
           git describe --tags 2>/dev/null > DOCKER_BUILD_VERSION
       - name: Docker login
-        uses: actions/docker/login@master
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
       - name: Build docker base
-        uses: actions/docker/cli@master
-        with:
-          entrypoint: sh
-          args: scripts/docker-build-hub.sh overseer Dockerfile
+        run: bash scripts/docker-build-hub.sh overseer Dockerfile
       - name: Build docker webhook bridge
-        uses: actions/docker/cli@master
-        with:
-          entrypoint: sh
-          args: scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
+        run: bash scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
       - name: Build docker email bridge
-        uses: actions/docker/cli@master
-        with:
-          entrypoint: sh
-          args: scripts/docker-build-hub.sh overseer-email-bridge Dockerfile.email-bridge
+        run: bash scripts/docker-build-hub.sh overseer-email-bridge Dockerfile.email-bridge
       - name: Build docker queue bridge
-        uses: actions/docker/cli@master
-        with:
-          entrypoint: sh
-          args: scripts/docker-build-hub.sh overseer-queue-bridge Dockerfile.queue-bridge
+        run: bash scripts/docker-build-hub.sh overseer-queue-bridge Dockerfile.queue-bridge
       - name: Upload binaries
         uses: skx/github-action-publish-binaries@master
         env:

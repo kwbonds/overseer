@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/cmaster11/overseer/test"
@@ -73,11 +72,11 @@ func (*k8sEventWatcherCmd) Usage() string {
 }
 
 // verbose shows a message only if we're running verbosely
-func (p *k8sEventWatcherCmd) verbose(txt string) {
-	if p.Verbose {
-		fmt.Print(txt)
-	}
-}
+//func (p *k8sEventWatcherCmd) verbose(txt string) {
+//	if p.Verbose {
+//		fmt.Print(txt)
+//	}
+//}
 
 //
 // Flag setup.
@@ -253,8 +252,6 @@ Event created: %s
 		fmt.Printf("Result addition failed: %s\n", err)
 		return
 	}
-
-	return
 }
 
 //func (p *k8sEventWatcherCmd) getDeduplicationCacheKey(hash string) string {
@@ -363,16 +360,16 @@ Event created: %s
 // alphaNumeric removes all non alpha-numeric characters from the
 // given string, and returns it.  We replace the characters that
 // are invalid with `_`.
-func (p *k8sEventWatcherCmd) alphaNumeric(input string) string {
-	//
-	// Remove non alphanumeric
-	//
-	reg, err := regexp.Compile("[^A-Za-z0-9]+")
-	if err != nil {
-		panic(err)
-	}
-	return reg.ReplaceAllString(input, "_")
-}
+//func (p *k8sEventWatcherCmd) alphaNumeric(input string) string {
+//	//
+//	// Remove non alphanumeric
+//	//
+//	reg, err := regexp.Compile("[^A-Za-z0-9]+")
+//	if err != nil {
+//		panic(err)
+//	}
+//	return reg.ReplaceAllString(input, "_")
+//}
 
 //
 // Entry-point.
@@ -428,12 +425,9 @@ func (p *k8sEventWatcherCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...in
 		return subcommands.ExitFailure
 	}
 
-	//
-	// Setup the options passed to each test, by copying our
-	// global ones.
-	//
-	var opts test.Options
-	opts.Verbose = p.Verbose
+	if p.Verbose {
+		eventWatcher.Debug = true
+	}
 
 	fmt.Printf("k8s event watcher worker started [tag=%s]\n", p.Tag)
 
