@@ -3,6 +3,7 @@ module github.com/cmaster11/overseer
 go 1.12
 
 require (
+	github.com/cmaster11/k8s-event-watcher v0.0.0-20191014122632-982e42a23a13
 	github.com/emersion/go-imap v1.0.0-beta.2
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
@@ -30,6 +31,7 @@ require (
 	golang.org/x/tools v0.0.0-20190925020647-22afafe3322a // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
+	k8s.io/api v0.0.0-20190620084959-7cf5895f2711
 	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
 	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
 )
