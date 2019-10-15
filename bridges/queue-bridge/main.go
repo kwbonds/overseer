@@ -5,7 +5,21 @@
 //
 // Once built launch it as follows:
 //
-//     $ ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.email,overseer.results.webhook
+//     $ ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.email,overseer.results.webhook[filterTag=hello.*]
+//
+// It is possible to conditionally clone results to different queues by using regex filters, e.g.
+//
+// -destination-queues=overseer.results.webhook[tag=k8s-cluster.*]
+//
+// Results are filterable on:
+//
+// - type: 		type=k8s-event
+// - tag: 		tag=my-k8s-cluster
+// - input
+// - target: 	target=10\.0\.123\.111
+// - error:		error=(ssl|SSL)
+// - isDedup:	isDedup=true/isDedup=false
+// - recovered:	recovered=true/recovered=false
 //
 // When a test is provided on the source queue, it gets cloned into the destination queues.
 // This helps using multiple bridges, e.g. to send an queue and a webhook for each test result.
