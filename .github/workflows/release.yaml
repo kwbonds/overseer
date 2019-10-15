@@ -1,8 +1,5 @@
-on:
-  push:
-    tags:
-      - release-*
-name: Handle push tag
+on: release
+name: Handle release
 jobs:
   upload:
     name: Upload
