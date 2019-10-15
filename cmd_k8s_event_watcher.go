@@ -5,7 +5,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
@@ -437,10 +436,10 @@ func (p *k8sEventWatcherCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...in
 	defer eventWatcher.Stop()
 
 	//
-	// Wait for jobs, in a blocking-manner.
+	// Wait for events, in a blocking-manner.
 	//
-	fmt.Println("Press 'Enter' to exit...")
-	bufio.NewReader(os.Stdin).ReadBytes('\n')
+	fmt.Println("Press 'CTRL-C' to exit...")
+	WaitForCtrlC()
 
 	return subcommands.ExitSuccess
 }
