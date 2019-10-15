@@ -3,7 +3,7 @@ module github.com/cmaster11/overseer
 go 1.13
 
 require (
-	github.com/cmaster11/k8s-event-watcher v0.0.0-20191014122632-982e42a23a13
+	github.com/cmaster11/k8s-event-watcher v0.0.3
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/emersion/go-imap v1.0.0-beta.2
 	github.com/go-redis/redis v6.15.2+incompatible
@@ -29,7 +29,7 @@ require (
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/sys v0.0.0-20191010194322-b09406accb47 // indirect
 	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20191012152004-8de300cfc20a // indirect
+	golang.org/x/tools v0.0.0-20191014205221-18e3458ac98b // indirect
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect

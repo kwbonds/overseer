@@ -8,6 +8,13 @@ github.com/cmaster11/k8s-event-watcher v0.0.0-20191014120134-e2cd4df293cf h1:Tl6
 github.com/cmaster11/k8s-event-watcher v0.0.0-20191014120134-e2cd4df293cf/go.mod h1:rfbCzVJhguJ5qnLB+Wfi4KrfHjllt5NdmSrFwPzcOj0=
 github.com/cmaster11/k8s-event-watcher v0.0.0-20191014122632-982e42a23a13 h1:pfRP5nEexbVsdY955Fxt465eGEp0KP2ugIGByFd28OQ=
 github.com/cmaster11/k8s-event-watcher v0.0.0-20191014122632-982e42a23a13/go.mod h1:rfbCzVJhguJ5qnLB+Wfi4KrfHjllt5NdmSrFwPzcOj0=
+github.com/cmaster11/k8s-event-watcher v0.0.0-20191015113828-68c7ac9aa2fd/go.mod h1:rfbCzVJhguJ5qnLB+Wfi4KrfHjllt5NdmSrFwPzcOj0=
+github.com/cmaster11/k8s-event-watcher v0.0.1 h1:tkamT0oFbXeOnSAujW2VvRy4yoDX3h/63Ea1VP5y5P8=
+github.com/cmaster11/k8s-event-watcher v0.0.1/go.mod h1:rfbCzVJhguJ5qnLB+Wfi4KrfHjllt5NdmSrFwPzcOj0=
+github.com/cmaster11/k8s-event-watcher v0.0.2 h1:vIb6WIJ2RvYq9XrF8f95upvtwq0nCaeDJRIrJPmQDB4=
+github.com/cmaster11/k8s-event-watcher v0.0.2/go.mod h1:rfbCzVJhguJ5qnLB+Wfi4KrfHjllt5NdmSrFwPzcOj0=
+github.com/cmaster11/k8s-event-watcher v0.0.3 h1:MDV0pT2h6FxIGk501x/kO/TvnpkNjTjEk9t7hN+NMHg=
+github.com/cmaster11/k8s-event-watcher v0.0.3/go.mod h1:rfbCzVJhguJ5qnLB+Wfi4KrfHjllt5NdmSrFwPzcOj0=
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
@@ -179,6 +186,8 @@ golang.org/x/tools v0.0.0-20190925020647-22afafe3322a h1:3GxqzBPBt1O2dIiPnzldQ5d
 golang.org/x/tools v0.0.0-20190925020647-22afafe3322a/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
 golang.org/x/tools v0.0.0-20191012152004-8de300cfc20a h1:TwMENskLwU2NnWBzrJGEWHqSiGUkO/B4rfyhwqDxDYQ=
 golang.org/x/tools v0.0.0-20191012152004-8de300cfc20a/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
+golang.org/x/tools v0.0.0-20191014205221-18e3458ac98b h1:EsQHTYgcM562dq02r6y2Yt9VpvvLNIyNECx96XQeolA=
+golang.org/x/tools v0.0.0-20191014205221-18e3458ac98b/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/appengine v1.4.0 h1:/wp5JvzpHIxhs/dumFmF7BXTf3Z+dd4uXta4kVyO508=

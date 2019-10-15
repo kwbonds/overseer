@@ -138,7 +138,7 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 }
 
 // notify is used to store the result of a test in our redis queue.
-func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, filterDescription string) {
+func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatcher.EventFilter) {
 
 	//
 	// If we don't have a redis-server then return immediately.
@@ -151,14 +151,17 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, filterDescription string) 
 	}
 
 	target := fmt.Sprintf("%s/%s/%s", event.InvolvedObject.Namespace, event.InvolvedObject.Kind, event.InvolvedObject.Name)
+	input := fmt.Sprintf("%s [%s]", target, eventFilter.StringShort())
 
 	testResult := &test.Result{
-		Input:  filterDescription,
+		Input:  input,
 		Target: target,
 		Time:   event.CreationTimestamp.Unix(),
 		Type:   "k8s-event",
 		Tag:    p.Tag,
 	}
+
+	eventFilterString := eventFilter.ToYAML()
 
 	errorString := strings.TrimSpace(fmt.Sprintf(`
 %s
@@ -168,6 +171,8 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, filterDescription string) 
 - Object namespace: %s
 - Object kind: %s
 - Object name: %s
+- Event filter:
+%s
 `,
 		event.Message,
 		event.Reason,
@@ -175,6 +180,7 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, filterDescription string) 
 		event.InvolvedObject.Namespace,
 		event.InvolvedObject.Kind,
 		event.InvolvedObject.Name,
+		indent(eventFilterString, "    "),
 	))
 	testResult.Error = &errorString
 
@@ -269,7 +275,7 @@ func (p *k8sEventWatcherCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...in
 	// Wait for events, in a blocking-manner.
 	//
 	fmt.Println("Press 'CTRL-C' to exit...")
-	WaitForCtrlC()
+	waitForCtrlC()
 
 	return subcommands.ExitSuccess
 }
