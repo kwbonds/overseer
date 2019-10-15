@@ -1,4 +1,6 @@
-on: release
+on:
+  release:
+    types: [published]
 name: Handle release
 jobs:
   upload:
