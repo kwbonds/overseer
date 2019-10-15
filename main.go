@@ -23,6 +23,7 @@ func main() {
 	subcommands.Register(&examplesCmd{}, "")
 	subcommands.Register(&versionCmd{}, "")
 	subcommands.Register(&workerCmd{}, "")
+	subcommands.Register(&k8sEventWatcherCmd{}, "")
 
 	flag.Parse()
 	ctx := context.Background()

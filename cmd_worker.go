@@ -424,7 +424,7 @@ func (p *workerCmd) alphaNumeric(input string) string {
 	if err != nil {
 		panic(err)
 	}
-	return (reg.ReplaceAllString(input, "_"))
+	return reg.ReplaceAllString(input, "_")
 }
 
 // formatMetrics Format a test for metrics submission.
@@ -446,13 +446,13 @@ func (p *workerCmd) formatMetrics(tst test.Test, key string) string {
 	// Special-case for the DNS-test
 	//
 	if tst.Type == "dns" {
-		return (prefix + ".dns." + p.alphaNumeric(tst.Arguments["lookup"]) + "." + key)
+		return prefix + ".dns." + p.alphaNumeric(tst.Arguments["lookup"]) + "." + key
 	}
 
 	//
 	// Otherwise we have a normal test.
 	//
-	return (prefix + tst.Type + "." + p.alphaNumeric(tst.Target) + "." + key)
+	return prefix + tst.Type + "." + p.alphaNumeric(tst.Target) + "." + key
 }
 
 // runTest is really the core of our application, as it is responsible
