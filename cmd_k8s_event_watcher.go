@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"k8s.io/api/core/v1"
 	"os"
+	"strings"
 )
 
 // This is our structure, largely populated by command-line arguments
@@ -149,16 +150,18 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, filterDescription string) 
 		return
 	}
 
+	target := fmt.Sprintf("%s/%s/%s", event.InvolvedObject.Namespace, event.InvolvedObject.Kind, event.InvolvedObject.Name)
+
 	testResult := &test.Result{
 		Input:  filterDescription,
-		Target: filterDescription,
+		Target: target,
 		Time:   event.CreationTimestamp.Unix(),
 		Type:   "k8s-event",
 		Tag:    p.Tag,
 	}
 
-	errorString := fmt.Sprintf(`
-Event created: %s
+	errorString := strings.TrimSpace(fmt.Sprintf(`
+%s
 
 - Event reason: %s
 - Event type: %s
@@ -172,67 +175,11 @@ Event created: %s
 		event.InvolvedObject.Namespace,
 		event.InvolvedObject.Kind,
 		event.InvolvedObject.Name,
-	)
+	))
 	testResult.Error = &errorString
 
-	//if testDefinition.DedupDuration == nil && p.DedupDuration > 0 {
-	//	// Assign a default dedup duration
-	//	testDefinition.DedupDuration = &p.DedupDuration
-	//}
 	//
-	//// If test has a deduplication rule, avoid re-triggering a notification if not needed, or clean the dedup cache if needed
-	//if testDefinition.DedupDuration != nil {
-	//
-	//	hash := testResult.Hash()
-	//	if testResult.Error != nil {
-	//
-	//		// Save the current notification time, this keeps alive the deduplication. *10 so that it's not going to expire
-	//		// anytime soon.
-	//		p.setDeduplicationCacheTime(hash, *testDefinition.DedupDuration*10)
-	//
-	//		lastAlertTime := p.getDeduplicationLastAlertTime(hash)
-	//
-	//		// With dedup, we don't want to trigger same notification, unless we just passed the dedup duration
-	//		if lastAlertTime != nil {
-	//			now := time.Now().Unix()
-	//			diffLastAlert := now - *lastAlertTime
-	//			dedupDurationSeconds := int64(*testDefinition.DedupDuration / time.Second)
-	//
-	//			if diffLastAlert < dedupDurationSeconds {
-	//				// There is no need to trigger the notification, because not enough time has passed since the last one
-	//				p.verbose(fmt.Sprintf("Skipping notification (dedup, last notif %s ago) for test `%s` (%s)\n",
-	//					time.Duration(diffLastAlert)*time.Second,
-	//					testDefinition.Input, testDefinition.Target))
-	//				return nil
-	//			}
-	//
-	//			// Let the user know that the generated notification is a duplicate
-	//			testResult.IsDedup = true
-	//		}
-	//
-	//		p.setDeduplicationLastAlertTime(hash, *testDefinition.DedupDuration*10)
-	//
-	//	} else {
-	//		// Check if a dedup was happening
-	//		dedupCacheTime := p.getDeduplicationCacheTime(hash)
-	//
-	//		// If there was a dedup cache time, we can mark this test as recovered
-	//		if dedupCacheTime != nil {
-	//			// Clear any dedup cache, because the test has passed
-	//			p.clearDeduplicationCacheTime(hash)
-	//			p.clearDeduplicationLastAlertTime(hash)
-	//			testResult.Recovered = true
-	//
-	//			p.verbose(fmt.Sprintf("Test recovered: `%s` (%s)\n",
-	//				testDefinition.Input, testDefinition.Target))
-	//		}
-	//
-	//	}
-	//
-	//}
-
-	//
-	// Convert the test result to a JSON string we can notify.
+	// Convert the event to a JSON string we can notify.
 	//
 	j, err := json.Marshal(testResult)
 	if err != nil {
@@ -249,123 +196,6 @@ Event created: %s
 		return
 	}
 }
-
-//func (p *k8sEventWatcherCmd) getDeduplicationCacheKey(hash string) string {
-//	return fmt.Sprintf("overseer.dedup-cache.%s", hash)
-//}
-//
-//// TODO
-//// TODO
-//// TODO
-//// TODO: share deduplication code
-//// TODO
-//// TODO
-//
-//func (p *k8sEventWatcherCmd) getDeduplicationCacheTime(hash string) *int64 {
-//	if p._r == nil {
-//		return nil
-//	}
-//
-//	cacheKey := p.getDeduplicationCacheKey(hash)
-//	cacheTime, err := p._r.Get(cacheKey).Int64()
-//	if err != nil {
-//		if err == redis.Nil {
-//			// Key just does not exist
-//			return nil
-//		}
-//
-//		fmt.Printf("Failed to get dedup cache key: %s\n", err)
-//		return nil
-//	}
-//
-//	return &cacheTime
-//}
-//
-//func (p *k8sEventWatcherCmd) setDeduplicationCacheTime(hash string, expiry time.Duration) {
-//	if p._r == nil {
-//		return
-//	}
-//
-//	cacheKey := p.getDeduplicationCacheKey(hash)
-//	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
-//	if err != nil {
-//		fmt.Printf("Failed to set dedup cache key: %s\n", err)
-//	}
-//}
-//
-//func (p *k8sEventWatcherCmd) clearDeduplicationCacheTime(hash string) {
-//	if p._r == nil {
-//		return
-//	}
-//
-//	cacheKey := p.getDeduplicationCacheKey(hash)
-//	_, err := p._r.Del(cacheKey).Result()
-//	if err != nil {
-//		fmt.Printf("Failed to clear dedup cache key: %s\n", err)
-//	}
-//}
-//
-//func (p *k8sEventWatcherCmd) getDeduplicationLastAlertKey(hash string) string {
-//	return fmt.Sprintf("overseer.dedup-last-alert.%s", hash)
-//}
-//
-//func (p *k8sEventWatcherCmd) getDeduplicationLastAlertTime(hash string) *int64 {
-//	if p._r == nil {
-//		return nil
-//	}
-//
-//	cacheKey := p.getDeduplicationLastAlertKey(hash)
-//	cacheTime, err := p._r.Get(cacheKey).Int64()
-//	if err != nil {
-//		if err == redis.Nil {
-//			// Key just does not exist
-//			return nil
-//		}
-//
-//		fmt.Printf("Failed to get dedup last alert key: %s\n", err)
-//		return nil
-//	}
-//
-//	return &cacheTime
-//}
-//
-//func (p *k8sEventWatcherCmd) setDeduplicationLastAlertTime(hash string, expiry time.Duration) {
-//	if p._r == nil {
-//		return
-//	}
-//
-//	cacheKey := p.getDeduplicationLastAlertKey(hash)
-//	_, err := p._r.Set(cacheKey, time.Now().Unix(), expiry).Result()
-//	if err != nil {
-//		fmt.Printf("Failed to set dedup last alert key: %s\n", err)
-//	}
-//}
-//
-//func (p *k8sEventWatcherCmd) clearDeduplicationLastAlertTime(hash string) {
-//	if p._r == nil {
-//		return
-//	}
-//
-//	cacheKey := p.getDeduplicationLastAlertKey(hash)
-//	_, err := p._r.Del(cacheKey).Result()
-//	if err != nil {
-//		fmt.Printf("Failed to clear dedup last alert key: %s\n", err)
-//	}
-//}
-
-// alphaNumeric removes all non alpha-numeric characters from the
-// given string, and returns it.  We replace the characters that
-// are invalid with `_`.
-//func (p *k8sEventWatcherCmd) alphaNumeric(input string) string {
-//	//
-//	// Remove non alphanumeric
-//	//
-//	reg, err := regexp.Compile("[^A-Za-z0-9]+")
-//	if err != nil {
-//		panic(err)
-//	}
-//	return reg.ReplaceAllString(input, "_")
-//}
 
 //
 // Entry-point.
