@@ -1,6 +1,6 @@
 module github.com/cmaster11/overseer
 
-go 1.12
+go 1.13
 
 require (
 	github.com/cmaster11/k8s-event-watcher v0.0.0-20191014122632-982e42a23a13

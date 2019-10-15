@@ -10,13 +10,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	k8seventwatcher "github.com/cmaster11/k8s-event-watcher"
+	"github.com/cmaster11/k8s-event-watcher"
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
-	_ "github.com/skx/golang-metrics"
 	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"os"
 )
 
