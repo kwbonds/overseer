@@ -4,7 +4,7 @@ package main
 
 import (
 	"context"
-	flag "github.com/spf13/pflag"
+	"flag"
 	"os"
 
 	"github.com/google/subcommands"

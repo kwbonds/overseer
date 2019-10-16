@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
-var regexDestinationQueue = regexp.MustCompile("([\\w.-]+)(\\[(.*)])?")
+var regexDestinationQueue = regexp.MustCompile("^([\\w.-]+)(\\[(.+)])?$")
 
 type destinationQueue struct {
 	queueKey string
@@ -22,8 +23,13 @@ func newDestinationQueueFromString(value string) (*destinationQueue, error) {
 		queueKey: matches[1],
 	}
 
-	if len(matches) == 3 && matches[2] != "" {
-		filtersString := matches[2]
+	if len(matches) == 3 {
+		filtersString := strings.TrimSpace(matches[2])
+
+		if filtersString == "" {
+			return nil, fmt.Errorf("empty filter tag: %s", value)
+		}
+
 		filter, err := newResultFilterFromQuery(filtersString)
 		if err != nil {
 			return nil, fmt.Errorf("invalid queue filter: %s", filtersString)

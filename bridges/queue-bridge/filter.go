@@ -58,7 +58,7 @@ func (f *resultFilter) Matches(result *test.Result) bool {
 
 const commaTemporaryReplacement = "___COMMA_REPLACEMENT"
 
-var regexpKeyQuery = regexp.MustCompile("(\\w+)=(.*)")
+var regexpKeyQuery = regexp.MustCompile("^(\\w+)=(.*)$")
 
 // Accepts a filter query and returns a filter object
 //

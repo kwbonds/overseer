@@ -3,7 +3,7 @@ package main
 // https://github.com/golang/go/issues/34053#issuecomment-532386030
 
 import (
-	flag "github.com/spf13/pflag"
+	"flag"
 
 	"golang.org/x/tools/go/analysis/passes/shadow"
 	"golang.org/x/tools/go/analysis/unitchecker"

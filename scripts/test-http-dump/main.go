@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	flag "github.com/spf13/pflag"
 	"net/http"
 	"net/http/httputil"
 )

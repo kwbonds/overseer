@@ -20,7 +20,6 @@ require (
 	github.com/rogpeppe/go-internal v1.5.0 // indirect
 	github.com/simia-tech/go-pop3 v0.0.0-20150626094726-c9c20550a244
 	github.com/skx/golang-metrics v0.0.0-20180606065905-85a4b4e0641f
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/thoj/go-ircevent v0.0.0-20190301105115-dc1855cb439c
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect

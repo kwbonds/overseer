@@ -7,12 +7,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/cmaster11/k8s-event-watcher"
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
-	flag "github.com/spf13/pflag"
 	"io/ioutil"
 	"k8s.io/api/core/v1"
 	"os"

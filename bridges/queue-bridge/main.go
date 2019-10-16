@@ -36,10 +36,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
-	flag "github.com/spf13/pflag"
 	"os"
 )
 
@@ -86,15 +86,17 @@ func main() {
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
 	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use as source.")
 
-	queuesArray := flag.StringArray("dest-queue", []string{}, "The redis queues to clone results into")
+	var queuesArray stringsFlag
+
+	flag.Var(&queuesArray, "dest-queue", "The redis queues to clone results into")
 
 	flag.Parse()
 
 	var queues []*destinationQueue
-	for _, queueString := range *queuesArray {
+	for _, queueString := range queuesArray {
 		queue, err := newDestinationQueueFromString(queueString)
 		if err != nil {
-			fmt.Printf("invalid queue string: %+v", queueString)
+			fmt.Printf("invalid queue string: %+v\n", queueString)
 			os.Exit(1)
 		}
 
@@ -108,6 +110,8 @@ func main() {
 		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue=overseer.results.queue -dest-queue=overseer.results.webhook\n")
 		os.Exit(1)
 	}
+
+	fmt.Printf("started with %d queues", len(queues))
 
 	//
 	// Create the redis client
