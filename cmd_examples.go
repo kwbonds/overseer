@@ -5,8 +5,8 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	flag "github.com/spf13/pflag"
 	"regexp"
 	"sort"
 

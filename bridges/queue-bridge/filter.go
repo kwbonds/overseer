@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	k8seventwatcher "github.com/cmaster11/k8s-event-watcher"
 	"github.com/cmaster11/overseer/test"
 	"regexp"
 	"strings"
@@ -17,11 +19,11 @@ type resultFilter struct {
 		- recovered:	recovered=true/recovered=false
 	*/
 
-	Type      *regexp.Regexp
-	Tag       *regexp.Regexp
-	Input     *regexp.Regexp
-	Target    *regexp.Regexp
-	Error     *regexp.Regexp
+	Type      *k8seventwatcher.Regexp
+	Tag       *k8seventwatcher.Regexp
+	Input     *k8seventwatcher.Regexp
+	Target    *k8seventwatcher.Regexp
+	Error     *k8seventwatcher.Regexp
 	IsDedup   *bool
 	Recovered *bool
 }
@@ -56,22 +58,77 @@ func (f *resultFilter) Matches(result *test.Result) bool {
 
 const commaTemporaryReplacement = "___COMMA_REPLACEMENT"
 
+var regexpKeyQuery = regexp.MustCompile("(\\w+)=(.*)")
+
 // Accepts a filter query and returns a filter object
 //
 // Filter query can be contain multiple options, divided by comma (,)
 // For regex values, comma can be escaped with \,
-func NewResultFilterFromQuery(queryString string) (*resultFilter, error) {
+func newResultFilterFromQuery(queryString string) (*resultFilter, error) {
 	// Temporary replacement for comma
 	queryString = strings.ReplaceAll(queryString, "\\,", commaTemporaryReplacement)
 
 	// Split in all the different queries
 	queries := strings.Split(queryString, ",")
 
+	filter := &resultFilter{}
+
 	for _, query := range queries {
 		// Restore comma
 		query = strings.ReplaceAll(query, commaTemporaryReplacement, ",")
 
 		// Process query
-		// TODO
+		// Query has key=regex
+		matches := regexpKeyQuery.FindStringSubmatch(query)
+		if matches == nil {
+			return nil, fmt.Errorf("invalid query: %s", query)
+		}
+
+		queryKey := matches[1]
+		queryRegexString := matches[2]
+
+		used := false
+
+		switch queryKey {
+		case "isDedup":
+			used = true
+			v := queryRegexString == "true"
+			filter.IsDedup = &v
+		case "recovered":
+			used = true
+			v := queryRegexString == "true"
+			filter.Recovered = &v
+			/*
+				Type      *k8seventwatcher.Regexp
+					Tag       *k8seventwatcher.Regexp
+					Input     *k8seventwatcher.Regexp
+					Target    *k8seventwatcher.Regexp
+					Error     *k8seventwatcher.Regexp
+			*/
+		}
+
+		if !used {
+			queryRegex, err := k8seventwatcher.NewRegexp(queryRegexString)
+			if err != nil {
+				return nil, err
+			}
+
+			switch queryKey {
+			case "type":
+				filter.Type = queryRegex
+			case "tag":
+				filter.Tag = queryRegex
+			case "input":
+				filter.Input = queryRegex
+			case "target":
+				filter.Target = queryRegex
+			case "error":
+				filter.Error = queryRegex
+			default:
+				return nil, fmt.Errorf("unhandled filter key: %s", queryKey)
+			}
+		}
 	}
+
+	return filter, nil
 }

@@ -5,8 +5,8 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	flag "github.com/spf13/pflag"
 
 	"github.com/cmaster11/overseer/parser"
 	"github.com/cmaster11/overseer/test"

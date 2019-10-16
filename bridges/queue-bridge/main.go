@@ -5,7 +5,7 @@
 //
 // Once built launch it as follows:
 //
-//     $ ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.email,overseer.results.webhook[filterTag=hello.*]
+//     $ ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue overseer.results.email -dest-queue overseer.results.webhook[tag=hello.*,name=dsf]
 //
 // It is possible to conditionally clone results to different queues by using regex filters, e.g.
 //
@@ -36,19 +36,18 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
+	flag "github.com/spf13/pflag"
 	"os"
-	"strings"
 )
 
 type QueueBridge struct {
 	R *redis.Client
 
 	// The queues to use as destination
-	Queues []string
+	Queues []*destinationQueue
 }
 
 //
@@ -63,10 +62,14 @@ func (bridge *QueueBridge) Process(msg []byte) {
 
 	fmt.Printf("Processing result: %+v\n", testResult)
 
-	for _, queueKey := range bridge.Queues {
-		_, err = bridge.R.RPush(queueKey, msg).Result()
+	for _, queue := range bridge.Queues {
+		if queue.filter != nil && !queue.filter.Matches(testResult) {
+			continue
+		}
+
+		_, err = bridge.R.RPush(queue.queueKey, msg).Result()
 		if err != nil {
-			fmt.Printf("Result clone failed for queue [%s]: %s\n", queueKey, err)
+			fmt.Printf("Result clone failed for queue [%s]: %s\n", queue.queueKey, err)
 		}
 	}
 }
@@ -83,25 +86,26 @@ func main() {
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
 	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use as source.")
 
-	queuesStr := flag.String("destination-queues", "", "The redis queues to clone results into")
+	queuesArray := flag.StringArray("dest-queue", []string{}, "The redis queues to clone results into")
 
 	flag.Parse()
 
-	queuesSplit := strings.Split(*queuesStr, ",")
-	var queuesValid []string
-	for _, queue := range queuesSplit {
-		if queue == "" {
-			continue
+	var queues []*destinationQueue
+	for _, queueString := range *queuesArray {
+		queue, err := newDestinationQueueFromString(queueString)
+		if err != nil {
+			fmt.Printf("invalid queue string: %+v", queueString)
+			os.Exit(1)
 		}
 
-		queuesValid = append(queuesValid, queue)
+		queues = append(queues, queue)
 	}
 
 	//
 	// Sanity-check.
 	//
-	if len(queuesValid) == 0 {
-		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.queue,overseer.results.webhook\n")
+	if len(queues) == 0 {
+		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue=overseer.results.queue -dest-queue=overseer.results.webhook\n")
 		os.Exit(1)
 	}
 
@@ -125,7 +129,7 @@ func main() {
 
 	bridge := QueueBridge{
 		R:      r,
-		Queues: queuesValid,
+		Queues: queues,
 	}
 
 	for {

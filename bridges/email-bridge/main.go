@@ -17,10 +17,10 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"github.com/cmaster11/overseer/test"
 	"github.com/cmaster11/overseer/utils"
+	flag "github.com/spf13/pflag"
 	"os"
 	"strings"
 	"text/template"
