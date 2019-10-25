@@ -37,9 +37,3 @@ jobs:
         run: bash scripts/docker-build-hub.sh overseer-email-bridge Dockerfile.email-bridge
       - name: Build docker queue bridge
         run: bash scripts/docker-build-hub.sh overseer-queue-bridge Dockerfile.queue-bridge
-      - name: Upload binaries
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: 'bin/*-*'
