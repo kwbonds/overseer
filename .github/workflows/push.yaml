@@ -7,4 +7,5 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Test
-        uses: skx/github-action-tester@master
+        uses: golang:1.13.1-alpine3.10
+        run: bash .github/run-tests.sh
