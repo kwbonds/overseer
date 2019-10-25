@@ -2,8 +2,6 @@ on:
   push:
     tags:
       - .*
-    tags-ignore:
-      - release-.*
 name: Handle push on tag
 jobs:
   upload:

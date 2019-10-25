@@ -8,4 +8,4 @@ jobs:
       - uses: actions/checkout@master
       - name: Test
         uses: golang:1.13.1-alpine3.10
-        run: bash .github/run-tests.sh
+        args: bash .github/run-tests.sh
