@@ -4,19 +4,19 @@ on:
       - .*
 name: Handle push on tag
 jobs:
-  test:
-    name: Testing
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test
-        # No alpine, lacking cgo support
-        uses: docker://golang:1.13.1
-        with:
-          entrypoint: sh
-          args: .github/run-tests.sh
+  #  test:
+  #    name: Testing
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - name: Test
+  #        # No alpine, lacking cgo support
+  #        uses: docker://golang:1.13.1
+  #        with:
+  #          entrypoint: sh
+  #          args: .github/run-tests.sh
   upload:
-    needs:
-      - test
+    #    needs:
+    #      - test
     name: Upload
     runs-on: ubuntu-latest
     steps:
