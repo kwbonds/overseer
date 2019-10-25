@@ -7,5 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Test
-        uses: golang:1.13.1-alpine3.10
-        args: bash .github/run-tests.sh
+        uses: docker://golang:1.13.1-alpine3.10
+        with:
+          entrypoint: sh
+          args: .github/run-tests.sh
