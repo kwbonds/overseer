@@ -1,0 +1,39 @@
+on:
+  push:
+    tags:
+      - ".*"
+name: Handle push on tag
+jobs:
+  #  test:
+  #    name: Testing
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - name: Test
+  #        # No alpine, lacking cgo support
+  #        uses: docker://golang:1.13.1
+  #        with:
+  #          entrypoint: sh
+  #          args: .github/run-tests.sh
+  upload:
+    #    needs:
+    #      - test
+    name: Upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      # Store current git tag
+      - run: |
+          git describe --tags 2>/dev/null > DOCKER_BUILD_VERSION
+      - name: Docker login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+      - name: Build docker base
+        run: bash scripts/docker-build-hub.sh overseer Dockerfile
+      - name: Build docker webhook bridge
+        run: bash scripts/docker-build-hub.sh overseer-webhook-bridge Dockerfile.webhook-bridge
+      - name: Build docker email bridge
+        run: bash scripts/docker-build-hub.sh overseer-email-bridge Dockerfile.email-bridge
+      - name: Build docker queue bridge
+        run: bash scripts/docker-build-hub.sh overseer-queue-bridge Dockerfile.queue-bridge
