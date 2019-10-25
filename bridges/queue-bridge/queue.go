@@ -6,11 +6,25 @@ import (
 	"strings"
 )
 
-var regexDestinationQueue = regexp.MustCompile("^([\\w.-]+)(\\[(.+)])?$")
+var regexDestinationQueue = regexp.MustCompile("^([\\w.-]+)(?:\\[(.+)])?$")
 
 type destinationQueue struct {
-	queueKey string
-	filter   *resultFilter
+	QueueKey string
+	Filter   *resultFilter
+}
+
+func newDestinationQueuesFromStringArray(queuesStringArray []string) ([]*destinationQueue, error) {
+	var queues []*destinationQueue
+	for _, queueString := range queuesStringArray {
+		queue, err := newDestinationQueueFromString(queueString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid queue string: %+v, %s\n", queueString, err)
+		}
+
+		queues = append(queues, queue)
+	}
+
+	return queues, nil
 }
 
 func newDestinationQueueFromString(value string) (*destinationQueue, error) {
@@ -20,22 +34,22 @@ func newDestinationQueueFromString(value string) (*destinationQueue, error) {
 	}
 
 	queue := &destinationQueue{
-		queueKey: matches[1],
+		QueueKey: matches[1],
 	}
 
 	if len(matches) == 3 {
 		filtersString := strings.TrimSpace(matches[2])
 
 		if filtersString == "" {
-			return nil, fmt.Errorf("empty filter tag: %s", value)
+			return queue, nil
 		}
 
 		filter, err := newResultFilterFromQuery(filtersString)
 		if err != nil {
-			return nil, fmt.Errorf("invalid queue filter: %s", filtersString)
+			return nil, fmt.Errorf("invalid queue filter: %s, %s", filtersString, err)
 		}
 
-		queue.filter = filter
+		queue.Filter = filter
 	}
 
 	return queue, nil

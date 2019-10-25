@@ -60,7 +60,7 @@ const commaTemporaryReplacement = "___COMMA_REPLACEMENT"
 
 var regexpKeyQuery = regexp.MustCompile("^(\\w+)=(.*)$")
 
-// Accepts a filter query and returns a filter object
+// Accepts a Filter query and returns a Filter object
 //
 // Filter query can be contain multiple options, divided by comma (,)
 // For regex values, comma can be escaped with \,
@@ -125,7 +125,7 @@ func newResultFilterFromQuery(queryString string) (*resultFilter, error) {
 			case "error":
 				filter.Error = queryRegex
 			default:
-				return nil, fmt.Errorf("unhandled filter key: %s", queryKey)
+				return nil, fmt.Errorf("unhandled Filter key: %s", queryKey)
 			}
 		}
 	}

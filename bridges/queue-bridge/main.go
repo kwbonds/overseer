@@ -9,7 +9,7 @@
 //
 // It is possible to conditionally clone results to different queues by using regex filters, e.g.
 //
-// -destination-queues=overseer.results.webhook[tag=k8s-cluster.*]
+// -dest-queue overseer.results.webhook[tag=k8s-cluster.*]
 //
 // Results are filterable on:
 //
@@ -63,13 +63,13 @@ func (bridge *QueueBridge) Process(msg []byte) {
 	fmt.Printf("Processing result: %+v\n", testResult)
 
 	for _, queue := range bridge.Queues {
-		if queue.filter != nil && !queue.filter.Matches(testResult) {
+		if queue.Filter != nil && !queue.Filter.Matches(testResult) {
 			continue
 		}
 
-		_, err = bridge.R.RPush(queue.queueKey, msg).Result()
+		_, err = bridge.R.RPush(queue.QueueKey, msg).Result()
 		if err != nil {
-			fmt.Printf("Result clone failed for queue [%s]: %s\n", queue.queueKey, err)
+			fmt.Printf("Result clone failed for queue [%s]: %s\n", queue.QueueKey, err)
 		}
 	}
 }
@@ -92,22 +92,17 @@ func main() {
 
 	flag.Parse()
 
-	var queues []*destinationQueue
-	for _, queueString := range queuesArray {
-		queue, err := newDestinationQueueFromString(queueString)
-		if err != nil {
-			fmt.Printf("invalid queue string: %+v\n", queueString)
-			os.Exit(1)
-		}
-
-		queues = append(queues, queue)
+	queues, err := newDestinationQueuesFromStringArray(queuesArray)
+	if err != nil {
+		fmt.Printf("Error parsing queues: %+v\n", err)
+		os.Exit(1)
 	}
 
 	//
 	// Sanity-check.
 	//
 	if len(queues) == 0 {
-		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue=overseer.results.queue -dest-queue=overseer.results.webhook\n")
+		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue=overseer.results.queue -dest-queue=overseer.results.webhook[tag=my-cluster-.*]\n")
 		os.Exit(1)
 	}
 
@@ -125,7 +120,7 @@ func main() {
 	//
 	// And run a ping, just to make sure it worked.
 	//
-	_, err := r.Ping().Result()
+	_, err = r.Ping().Result()
 	if err != nil {
 		fmt.Printf("Redis connection failed: %s\n", err.Error())
 		os.Exit(1)
