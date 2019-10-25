@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var regexDestinationQueue = regexp.MustCompile("^([\\w.-]+)(?:\\[(.+)])?$")
+var regexDestinationQueue = regexp.MustCompile(`^([\w.-]+)(?:\[(.+)])?$`)
 
 type destinationQueue struct {
 	QueueKey string
@@ -18,7 +18,7 @@ func newDestinationQueuesFromStringArray(queuesStringArray []string) ([]*destina
 	for _, queueString := range queuesStringArray {
 		queue, err := newDestinationQueueFromString(queueString)
 		if err != nil {
-			return nil, fmt.Errorf("invalid queue string: %+v, %s\n", queueString, err)
+			return nil, fmt.Errorf("invalid queue string: %+v, %s", queueString, err)
 		}
 
 		queues = append(queues, queue)
