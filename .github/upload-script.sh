@@ -9,12 +9,6 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   exit 1
 fi
 
-# Ensure that there is a pattern specified.
-if [[ -z "$1" ]]; then
-  echo "Missing file (pattern) to upload."
-  exit 1
-fi
-
 apt-get update && apt-get install --yes \
   ca-certificates \
   curl \
@@ -29,45 +23,9 @@ if [ "$IS_DRAFT" = true ]; then
   exit 0
 fi
 
-#
-# In the past we invoked a build-script to generate artifacts.
-#
-# Now we prefer to assume they are built already.  However if
-# there is a (legacy) build-script present AND the artifacts
-# we expect to find are missing then we will invoke it.
-#
-if [ -e .github/build ]; then
-
-  # Have we found any artifacts?
-  found=
-  for file in $*; do
-    if [ -e "$file" ]; then
-      found=1
-    fi
-  done
-
-  #
-  # Run the build-script if we have no artifacts.
-  #
-  if [ -z "${found}" ]; then
-
-    echo "************************************************************"
-    echo " artifacts are missing, but a legacy build-script was found."
-    echo " launching build-script .."
-    echo "************************************************************"
-
-    chmod 755 .github/build
-    ./.github/build
-
-    echo "************************************************************"
-    echo " build-script completed"
-    echo "************************************************************"
-  else
-    echo "*****************************************************************"
-    echo " Artifacts are already present, skipping the legacy build-script."
-    echo "*****************************************************************"
-  fi
-fi
+# Trigger artifacts build process
+chmod 755 .github/build
+./.github/build
 
 # Prepare the headers for our curl-command.
 AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
@@ -76,7 +34,7 @@ AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 RELEASE_ID=$(jq --raw-output '.release.id' "$GITHUB_EVENT_PATH")
 
 # For each matching file..
-for file in $*; do
+for file in bin/*; do
 
   echo "Processing file ${file}"
 
@@ -104,6 +62,7 @@ for file in $*; do
 
   # Upload the artifact - capturing HTTP response-code in our output file.
   response=$(curl \
+    --retry 3 \
     -sSL \
     -XPOST \
     -H "${AUTH_HEADER}" \
