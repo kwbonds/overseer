@@ -9,8 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Upload binaries
-        uses: skx/github-action-publish-binaries@master
+        uses: docker://golang:1.13.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: 'bin/*-*'
+          entrypoint: sh
+          args: .github/upload-script.sh
