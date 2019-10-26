@@ -1,6 +1,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/cmaster11/overseer)](https://goreportcard.com/report/github.com/cmaster11/overseer)
 [![license](https://img.shields.io/github/license/cmaster11/overseer.svg)](https://github.com/cmaster11/overseer/blob/master/LICENSE)
 
+Changelog is [here](CHANGELOG.md).
+
 # DISCLAIMER
 
 This project is a heavily modified version of the amazing [skx/overseer](https://github.com/skx/overseer) one. 
