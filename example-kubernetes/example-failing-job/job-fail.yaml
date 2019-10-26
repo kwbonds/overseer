@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: test
-  namespace: default
+  namespace: overseer
 spec:
   backoffLimit: 0
   template:
