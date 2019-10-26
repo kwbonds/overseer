@@ -13,5 +13,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          entrypoint: sh
+          entrypoint: bash
           args: .github/upload-script.sh
