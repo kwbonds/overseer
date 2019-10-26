@@ -1,9 +1,10 @@
 package main
 
 import (
+	"testing"
+
 	"github.com/cmaster11/overseer/test"
 	"gopkg.in/yaml.v2"
-	"testing"
 )
 
 func TestNewResultFilterFromQuery(t *testing.T) {

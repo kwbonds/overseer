@@ -2,23 +2,32 @@ package main
 
 import (
 	"fmt"
-	k8seventwatcher "github.com/cmaster11/k8s-event-watcher"
-	"github.com/cmaster11/overseer/test"
 	"regexp"
 	"strings"
+
+	k8seventwatcher "github.com/cmaster11/k8s-event-watcher"
+	"github.com/cmaster11/overseer/test"
 )
 
-type resultFilter struct {
-	/*
-		- type: 		type=k8s-event
-		- tag: 			tag=my-k8s-cluster
-		- input
-		- target: 		target=10\.0\.123\.111
-		- error:		error=(ssl|SSL)
-		- isDedup:		isDedup=true/isDedup=false
-		- recovered:	recovered=true/recovered=false
-	*/
+/*
+Test results can be filtered using all the following keys:
 
+	- type (regex): 		type=k8s-event
+	- tag (regex): 			tag=my-k8s-cluster
+							tag=!my-k8s-cluster <- this will match anything that does NOT match 'my-k8s-cluster'
+	- input (regex)
+	- target (regex): 		target=10\.0\.123\.111
+							target=my-namespace/Job/my-cronjob
+	- error (regex):		error=(ssl|SSL)
+	- isDedup (bool):		isDedup=true/isDedup=false
+	- recovered (bool):		recovered=true/recovered=false
+
+Notes:
+
+* All regex fields can be negated by prepending the ! character: tag=!my-k8s-cluster.
+
+*/
+type resultFilter struct {
 	Type      *k8seventwatcher.Regexp
 	Tag       *k8seventwatcher.Regexp
 	Input     *k8seventwatcher.Regexp
@@ -92,19 +101,27 @@ func newResultFilterFromQuery(queryString string) (*resultFilter, error) {
 		switch queryKey {
 		case "isDedup":
 			used = true
-			v := queryRegexString == "true"
+			var v bool
+			if queryRegexString == "true" {
+				v = true
+			} else if queryRegexString == "false" {
+				v = false
+			} else {
+				return nil, fmt.Errorf("invalid boolean value %s for key %s", queryRegexString, queryKey)
+			}
+
 			filter.IsDedup = &v
 		case "recovered":
 			used = true
-			v := queryRegexString == "true"
+			var v bool
+			if queryRegexString == "true" {
+				v = true
+			} else if queryRegexString == "false" {
+				v = false
+			} else {
+				return nil, fmt.Errorf("invalid boolean value %s for key %s", queryRegexString, queryKey)
+			}
 			filter.Recovered = &v
-			/*
-				Type      *k8seventwatcher.Regexp
-					Tag       *k8seventwatcher.Regexp
-					Input     *k8seventwatcher.Regexp
-					Target    *k8seventwatcher.Regexp
-					Error     *k8seventwatcher.Regexp
-			*/
 		}
 
 		if !used {
@@ -125,7 +142,7 @@ func newResultFilterFromQuery(queryString string) (*resultFilter, error) {
 			case "error":
 				filter.Error = queryRegex
 			default:
-				return nil, fmt.Errorf("unhandled Filter key: %s", queryKey)
+				return nil, fmt.Errorf("unhandled filter key: %s", queryKey)
 			}
 		}
 	}

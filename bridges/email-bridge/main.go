@@ -19,12 +19,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/cmaster11/overseer/test"
-	"github.com/cmaster11/overseer/utils"
 	"os"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/cmaster11/overseer/test"
+	"github.com/cmaster11/overseer/utils"
 
 	"github.com/go-redis/redis"
 )

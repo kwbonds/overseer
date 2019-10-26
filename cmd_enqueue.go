@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/cmaster11/overseer/parser"
 	"github.com/cmaster11/overseer/test"
@@ -18,11 +19,12 @@ import (
 )
 
 type enqueueCmd struct {
-	RedisDB       int
-	RedisHost     string
-	RedisPassword string
-	RedisSocket   string
-	_r            *redis.Client
+	RedisDB          int
+	RedisHost        string
+	RedisPassword    string
+	RedisSocket      string
+	RedisDialTimeout time.Duration
+	_r               *redis.Client
 }
 
 //
@@ -52,6 +54,7 @@ func (p *enqueueCmd) SetFlags(f *flag.FlagSet) {
 	defaults.RedisPassword = ""
 	defaults.RedisDB = 0
 	defaults.RedisSocket = ""
+	defaults.RedisDialTimeout = 5 * time.Second
 
 	//
 	// If we have a configuration file then load it
@@ -73,6 +76,7 @@ func (p *enqueueCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.RedisHost, "redis-host", defaults.RedisHost, "Specify the address of the redis queue.")
 	f.StringVar(&p.RedisPassword, "redis-pass", defaults.RedisPassword, "Specify the password for the redis queue.")
 	f.StringVar(&p.RedisSocket, "redis-socket", defaults.RedisSocket, "If set, will be used for the redis connections.")
+	f.DurationVar(&p.RedisDialTimeout, "redis-timeout", defaults.RedisDialTimeout, "Redis connection timeout.")
 }
 
 //
@@ -94,16 +98,18 @@ func (p *enqueueCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 	//
 	if p.RedisSocket != "" {
 		p._r = redis.NewClient(&redis.Options{
-			Network:  "unix",
-			Addr:     p.RedisSocket,
-			Password: p.RedisPassword,
-			DB:       p.RedisDB,
+			Network:     "unix",
+			Addr:        p.RedisSocket,
+			Password:    p.RedisPassword,
+			DB:          p.RedisDB,
+			DialTimeout: p.RedisDialTimeout,
 		})
 	} else {
 		p._r = redis.NewClient(&redis.Options{
-			Addr:     p.RedisHost,
-			Password: p.RedisPassword,
-			DB:       p.RedisDB,
+			Addr:        p.RedisHost,
+			Password:    p.RedisPassword,
+			DB:          p.RedisDB,
+			DialTimeout: p.RedisDialTimeout,
 		})
 	}
 

@@ -58,6 +58,9 @@ type workerCmd struct {
 	// The redis-sockt we're going to use. (If used, we ignore the specified host / port)
 	RedisSocket string
 
+	// Redis connection timeout
+	RedisDialTimeout time.Duration
+
 	// Tag applied to all results
 	Tag string
 
@@ -159,6 +162,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	defaults.RedisHost = "localhost:6379"
 	defaults.RedisDB = 0
 	defaults.RedisPassword = ""
+	defaults.RedisDialTimeout = 5 * time.Second
 
 	//
 	// If we have a configuration file then load it
@@ -202,6 +206,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	f.IntVar(&p.RedisDB, "redis-db", defaults.RedisDB, "Specify the database-number for redis.")
 	f.StringVar(&p.RedisPassword, "redis-pass", defaults.RedisPassword, "Specify the password for the redis queue.")
 	f.StringVar(&p.RedisSocket, "redis-socket", defaults.RedisSocket, "If set, will be used for the redis connections.")
+	f.DurationVar(&p.RedisDialTimeout, "redis-timeout", defaults.RedisDialTimeout, "Redis connection timeout.")
 
 	// Tag
 	f.StringVar(&p.Tag, "tag", defaults.Tag, "Specify the tag to add to all test-results.")
@@ -718,16 +723,18 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	//
 	if p.RedisSocket != "" {
 		p._r = redis.NewClient(&redis.Options{
-			Network:  "unix",
-			Addr:     p.RedisSocket,
-			Password: p.RedisPassword,
-			DB:       p.RedisDB,
+			Network:     "unix",
+			Addr:        p.RedisSocket,
+			Password:    p.RedisPassword,
+			DB:          p.RedisDB,
+			DialTimeout: p.RedisDialTimeout,
 		})
 	} else {
 		p._r = redis.NewClient(&redis.Options{
-			Addr:     p.RedisHost,
-			Password: p.RedisPassword,
-			DB:       p.RedisDB,
+			Addr:        p.RedisHost,
+			Password:    p.RedisPassword,
+			DB:          p.RedisDB,
+			DialTimeout: p.RedisDialTimeout,
 		})
 	}
 

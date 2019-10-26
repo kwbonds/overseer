@@ -1,8 +1,9 @@
 package main
 
 import (
-	"gopkg.in/yaml.v2"
 	"testing"
+
+	"gopkg.in/yaml.v2"
 )
 
 func TestNewDestinationQueueFromString(t *testing.T) {

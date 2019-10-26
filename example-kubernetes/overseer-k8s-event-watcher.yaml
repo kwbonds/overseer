@@ -63,3 +63,5 @@ data:
     filters:
       - objectKind: Job
         eventReason: BackoffLimitExceeded
+        # Watch only for specific namespace
+        # objectNamespace: my-namespace

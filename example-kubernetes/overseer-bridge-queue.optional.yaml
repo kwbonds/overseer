@@ -31,5 +31,8 @@ spec:
           args:
             - -redis-host
             - redis:6379
-            - -destination-queues
-            - overseer.results.email,overseer.results.n17
+            - -dest-queue=overseer.results.email
+            - -dest-queue=overseer.results.n17
+            # Optional, queues can be filtered by contents of test results
+            # See <bridges/queue-bridge/filter.go> for all possible keys
+            # - -dest-queue=overseer.results.only-cronjobs[target=my-namespace/Job]

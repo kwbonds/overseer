@@ -38,9 +38,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
-	"os"
 )
 
 type QueueBridge struct {
