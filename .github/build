@@ -59,7 +59,7 @@ for OS in ${BUILD_PLATFORMS[@]}; do
       bridge=$(basename $br)
 
       # Build the bridge I use
-      go build -o "${OUT_DIR}/${bridge}-${SUFFIX}" "${br}/main.go"
+      go build -o "${OUT_DIR}/${bridge}-${SUFFIX}" "${br}"
 
     done
   done
