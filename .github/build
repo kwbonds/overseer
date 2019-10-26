@@ -17,50 +17,50 @@ BUILD_ARCHS="amd64 386"
 # For each platform
 for OS in ${BUILD_PLATFORMS[@]}; do
 
-    # For each arch
-    for ARCH in ${BUILD_ARCHS[@]}; do
+  # For each arch
+  for ARCH in ${BUILD_ARCHS[@]}; do
 
-        # Setup a suffix for the binary
-        SUFFIX="${OS}"
+    # Setup a suffix for the binary
+    SUFFIX="${OS}"
 
-        # i386 is better than 386
-        if [ "$ARCH" = "386" ]; then
-            SUFFIX="${SUFFIX}-i386"
-        else
-            SUFFIX="${SUFFIX}-${ARCH}"
-        fi
+    # i386 is better than 386
+    if [ "$ARCH" = "386" ]; then
+      SUFFIX="${SUFFIX}-i386"
+    else
+      SUFFIX="${SUFFIX}-${ARCH}"
+    fi
 
-        # Windows binaries should end in .EXE
-        if [ "$OS" = "windows" ]; then
-            SUFFIX="${SUFFIX}.exe"
-        fi
+    # Windows binaries should end in .EXE
+    if [ "$OS" = "windows" ]; then
+      SUFFIX="${SUFFIX}.exe"
+    fi
 
-        echo "Building for ${OS} [${ARCH}] -> ${BASE}-${SUFFIX}"
+    echo "Building for ${OS} [${ARCH}] -> ${BASE}-${SUFFIX}"
 
-        # Run the build
-        export GOARCH=${ARCH}
-        export GOOS=${OS}
-        export CGO_ENABLED=0
+    # Run the build
+    export GOARCH=${ARCH}
+    export GOOS=${OS}
+    export CGO_ENABLED=0
 
-        # hack for ARM
-        if [ "${GOOS}" = "arm64" ]; then
-            export GOOS=""
-            export GOARCH=arm64
-            export GOARM=7
-            SUFFIX="arm64"
-        fi
+    # hack for ARM
+    if [ "${GOOS}" = "arm64" ]; then
+      export GOOS=""
+      export GOARCH=arm64
+      export GOARM=7
+      SUFFIX="arm64"
+    fi
 
-        # Build the main-binary
-        go build -ldflags "-X main.version=$(git describe --tags 2>/dev/null || echo 'master')" -o "${OUT_DIR}/${BASE}-${SUFFIX}" "$DIR/.."
+    # Build the main-binary
+    go build -ldflags "-X main.version=$(git describe --tags 2>/dev/null || echo 'master')" -o "${OUT_DIR}/${BASE}-${SUFFIX}" "$DIR/.."
 
-        # Build each bridge
-        for br in ${DIR}/../bridges/*/; do
+    # Build each bridge
+    for br in ${DIR}/../bridges/*/; do
 
-            bridge=$(basename $br)
+      bridge=$(basename $br)
 
-            # Build the bridge I use
-            go build -o "${OUT_DIR}/${bridge}-${SUFFIX}" "${br}/main.go"
+      # Build the bridge I use
+      go build -o "${OUT_DIR}/${bridge}-${SUFFIX}" "${br}/main.go"
 
-        done
     done
+  done
 done

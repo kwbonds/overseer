@@ -221,7 +221,7 @@ What deduplication does is:
 
 ## Metrics
 
-Overseer has built-in support for exporting metrics to a remote carbon-server:
+Overseer has partial built-in support for exporting metrics to a remote carbon-server:
 
 * Details of the system itself.
    * Via the [go-metrics](https://github.com/skx/golang-metrics) package.
@@ -238,7 +238,7 @@ We use Redis as a queue as it is simple to deploy, stable, and well-known.
 Redis doesn't natively operate as a queue, so we replicate this via the "list"
 primitives. Adding a job to a queue is performed via a "[rpush](https://redis.io/commands/rpush)" operation, and pulling a job from the queue is achieved via an "[blpop](https://redis.io/commands/blpop)" command.
 
-We use the following two lists as queues:
+We use the following lists as queues:
 
 * `overseer.jobs`
     * For storing tests to be executed by a worker.

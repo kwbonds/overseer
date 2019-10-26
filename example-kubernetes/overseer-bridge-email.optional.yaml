@@ -29,17 +29,17 @@ spec:
         - name: overseer-bridge-email
           image: cmaster11/overseer-email-bridge:release-1.10-2
           # SMTP username/password from env
-          #          env:
-          #            - name: SMTP_USERNAME
-          #              valueFrom:
-          #                secretKeyRef:
-          #                  name: email-auth
-          #                  key: username
-          #            - name: SMTP_PASSWORD
-          #              valueFrom:
-          #                secretKeyRef:
-          #                  name: email-auth
-          #                  key: password
+          #  env:
+          #    - name: SMTP_USERNAME
+          #      valueFrom:
+          #        secretKeyRef:
+          #          name: email-auth
+          #          key: username
+          #    - name: SMTP_PASSWORD
+          #      valueFrom:
+          #        secretKeyRef:
+          #          name: email-auth
+          #          key: password
           args:
             - -redis-host
             - redis:6379
@@ -48,13 +48,13 @@ spec:
             - -smtp-port
             - "587"
             # If using the webhook queue to clone test results
-            #            - -redis-queue-key
-            #            - "overseer.results.email"
-            # SMTP username/password from env
-            #            - -smtp-username
-            #            - $(SMTP_USERNAME)
-            #            - -smtp-password
-            #            - $(SMTP_PASSWORD)
+            #  - -redis-queue-key
+            #  - "overseer.results.email"
+            #  SMTP username/password from env
+            #  - -smtp-username
+            #  - $(SMTP_USERNAME)
+            #  - -smtp-password
+            #  - $(SMTP_PASSWORD)
             - -smtp-username
             - "hello@google.com"
             - -smtp-password

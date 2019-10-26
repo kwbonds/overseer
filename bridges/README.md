@@ -15,12 +15,17 @@ If the remote host is offline _every_ time that overseer executes that
 test it will record a fresh failure so if you're using the email bridge
 you'll receive a fresh email each time the test is executed.
 
-> (The purppura-bridge keeps local state, so it will ensure that humans are only notified once - even though it itself is updated at the end of every run.)
-
 The following bridges are distributed with `overseer`:
 
+* [webhook-bridge](webhook-bridge/)
+    * Submits tests via webhook (see [Kubernetes usage example](/example-kubernetes/overseer-bridge-webhook-n17.yaml)).
 * [email-bridge](email-bridge/)
-   * Submits test-failures via email.
-     * Test results which succeed are discarded.
+    * Submits test-failures via email, using SMTP server (see [Kubernetes usage example](/example-kubernetes/overseer-bridge-email.optional.yaml)).
+* [queue-bridge](email-bridge/)
+    * Duplicates test results into different queues, so that they can be sent to different destinations at the same time (e.g. webhook + email) (see [Kubernetes usage example](/example-kubernetes/overseer-bridge-queue.optional.yaml)).
+* [sendmail-bridge](sendmail-bridge/)
+    * Submits test-failures via sendmail.
+        * Test results which succeed are discarded.
 * [purppura-bridge](purppura-bridge/)
-   * Posts test results to a [purppura](https://github.com/skx/purppura/)-instance.
+    * Posts test results to a [purppura](https://github.com/skx/purppura/)-instance.
+    * The purppura-bridge keeps local state, so it will ensure that humans are only notified once - even though it itself is updated at the end of every run.

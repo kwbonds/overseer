@@ -5,7 +5,21 @@
 //
 // Once built launch it as follows:
 //
-//     $ ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.email,overseer.results.webhook
+//     $ ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue overseer.results.email -dest-queue overseer.results.webhook[tag=hello.*,name=dsf]
+//
+// It is possible to conditionally clone results to different queues by using regex filters, e.g.
+//
+// -dest-queue overseer.results.webhook[tag=k8s-cluster.*]
+//
+// Results are filterable on:
+//
+// - type: 		type=k8s-event
+// - tag: 		tag=my-k8s-cluster
+// - input
+// - target: 	target=10\.0\.123\.111
+// - error:		error=(ssl|SSL)
+// - isDedup:	isDedup=true/isDedup=false
+// - recovered:	recovered=true/recovered=false
 //
 // When a test is provided on the source queue, it gets cloned into the destination queues.
 // This helps using multiple bridges, e.g. to send an queue and a webhook for each test result.
@@ -24,17 +38,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
-	"os"
-	"strings"
 )
 
 type QueueBridge struct {
 	R *redis.Client
 
 	// The queues to use as destination
-	Queues []string
+	Queues []*destinationQueue
 }
 
 //
@@ -49,10 +63,14 @@ func (bridge *QueueBridge) Process(msg []byte) {
 
 	fmt.Printf("Processing result: %+v\n", testResult)
 
-	for _, queueKey := range bridge.Queues {
-		_, err = bridge.R.RPush(queueKey, msg).Result()
+	for _, queue := range bridge.Queues {
+		if queue.Filter != nil && !queue.Filter.Matches(testResult) {
+			continue
+		}
+
+		_, err = bridge.R.RPush(queue.QueueKey, msg).Result()
 		if err != nil {
-			fmt.Printf("Result clone failed for queue [%s]: %s\n", queueKey, err)
+			fmt.Printf("Result clone failed for queue [%s]: %s\n", queue.QueueKey, err)
 		}
 	}
 }
@@ -69,27 +87,27 @@ func main() {
 	redisPass := flag.String("redis-pass", "", "Specify the password of the redis queue.")
 	redisQueueKey := flag.String("redis-queue-key", "overseer.results", "Specify the redis queue key to use as source.")
 
-	queuesStr := flag.String("destination-queues", "", "The redis queues to clone results into")
+	var queuesArray stringsFlag
+
+	flag.Var(&queuesArray, "dest-queue", "The redis queues to clone results into")
 
 	flag.Parse()
 
-	queuesSplit := strings.Split(*queuesStr, ",")
-	var queuesValid []string
-	for _, queue := range queuesSplit {
-		if queue == "" {
-			continue
-		}
-
-		queuesValid = append(queuesValid, queue)
+	queues, err := newDestinationQueuesFromStringArray(queuesArray)
+	if err != nil {
+		fmt.Printf("Error parsing queues: %+v\n", err)
+		os.Exit(1)
 	}
 
 	//
 	// Sanity-check.
 	//
-	if len(queuesValid) == 0 {
-		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -destination-queues=overseer.results.queue,overseer.results.webhook\n")
+	if len(queues) == 0 {
+		fmt.Printf("Usage: ./queue-bridge [-redis-queue-key=overseer.results] -dest-queue=overseer.results.queue -dest-queue=overseer.results.webhook[tag=my-cluster-.*]\n")
 		os.Exit(1)
 	}
+
+	fmt.Printf("started with %d queues", len(queues))
 
 	//
 	// Create the redis client
@@ -103,7 +121,7 @@ func main() {
 	//
 	// And run a ping, just to make sure it worked.
 	//
-	_, err := r.Ping().Result()
+	_, err = r.Ping().Result()
 	if err != nil {
 		fmt.Printf("Redis connection failed: %s\n", err.Error())
 		os.Exit(1)
@@ -111,7 +129,7 @@ func main() {
 
 	bridge := QueueBridge{
 		R:      r,
-		Queues: queuesValid,
+		Queues: queues,
 	}
 
 	for {

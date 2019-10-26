@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-      - ".*"
+      - "*"
 name: Handle push on tag
 jobs:
   #  test:

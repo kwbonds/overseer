@@ -20,35 +20,35 @@ spec:
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - overseer-k8s-event-watcher
-            topologyKey: kubernetes.io/hostname
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - overseer-k8s-event-watcher
+              topologyKey: kubernetes.io/hostname
       containers:
-      - name: overseer-k8s-event-watcher
-        image: cmaster11/overseer:release-1.10-2
-        args:
-        - k8s-event-watcher
-        - -redis-host
-        - redis:6379
-        - -verbose
-        # A tag to identify the current overseer workers.
-        # Useful when dealing with multiple overseer workers in multiple Kubernetes clusters.
-        - -tag
-        - my-k8s-cluster
-        # The actual config of the event watcher
-        - -watcher-config
-        - /opt/overseer/config/event-watcher-config.yaml
-        volumeMounts:
-        - name: overseer-k8s-event-watcher-config
-          mountPath: /opt/overseer/config
+        - name: overseer-k8s-event-watcher
+          image: cmaster11/overseer:release-1.10-2
+          args:
+            - k8s-event-watcher
+            - -redis-host
+            - redis:6379
+            - -verbose
+            # A tag to identify the current overseer workers.
+            # Useful when dealing with multiple overseer workers in multiple Kubernetes clusters.
+            - -tag
+            - my-k8s-cluster
+            # The actual config of the event watcher
+            - -watcher-config
+            - /opt/overseer/config/event-watcher-config.yaml
+          volumeMounts:
+            - name: overseer-k8s-event-watcher-config
+              mountPath: /opt/overseer/config
       volumes:
-      - name: overseer-k8s-event-watcher-config
-        configMap:
-          name: overseer-k8s-event-watcher-config
+        - name: overseer-k8s-event-watcher-config
+          configMap:
+            name: overseer-k8s-event-watcher-config
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -63,3 +63,5 @@ data:
     filters:
       - objectKind: Job
         eventReason: BackoffLimitExceeded
+        # Watch only for specific namespace
+        # objectNamespace: my-namespace

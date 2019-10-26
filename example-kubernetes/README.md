@@ -8,8 +8,8 @@ It contains:
 * A service account, which will let `overseer` observe services in the k8s cluster.
 * An [`overseer-worker`](overseer-worker.yaml) deployment, to process tests to execute.
 * An [`overseer-bridge-webhook-n17`](overseer-bridge-webhook-n17.yaml) deployment, to notify errors using [Notify17](https://notify17.net).
-* An [`overseer-bridge-email`](overseer-bridge-email.yaml.optional) deployment, to notify errors using a standard email SMTP server.
-* An [`overseer-bridge-queue`](overseer-bridge-queue.yaml.optional) deployment, to duplicate test results and send them to multiple destination ([read more](#multiple-destinations-eg-notify17-and-email)).
+* An [`overseer-bridge-email`](overseer-bridge-email.optional.yaml) deployment, to notify errors using a standard email SMTP server.
+* An [`overseer-bridge-queue`](overseer-bridge-queue.optional.yaml) deployment, to duplicate test results and send them to multiple destination ([read more](#multiple-destinations-eg-notify17-and-email)).
 * A [`CronJob`](overseer-enqueue.yaml) that will periodically enqueue the tests you want to run.
 * A simple [`Redis`](https://redis.io/) deployment, to hold test queues and results.
 
@@ -21,9 +21,9 @@ and replace the `REPLACE_TEMPLATE_API_KEY` string in [`overseer-bridge-webhook-n
 
 ### Multiple destinations (e.g. Notify17 AND email)
 
-In the scenario where you want to send your notifications to multiple destinations (e.g. Notify17 AND email), you can use the [`overseer-bridge-queue`](overseer-bridge-queue.yaml.optional) deployment:
+In the scenario where you want to send your notifications to multiple destinations (e.g. Notify17 AND email), you can use the [`overseer-bridge-queue`](overseer-bridge-queue.optional.yaml) deployment:
 
-* Configure the `-destination-queues` argument to clone test results on how many queues you want (e.g. if you want to send an email, you can create a queue with name `overseer.results.email`).
+* Use one `-dest-queues` argument for each queue you want (e.g. if you want to send an email, you can create a queue with `-dest-queue=overseer.results.email`).
 * Configure the corresponding bridges to use the new queue names by having the `-redis-queue-key` argument match the previously configured one. (e.g. `overseer.results.email`).
 
 A complete scenario can be:

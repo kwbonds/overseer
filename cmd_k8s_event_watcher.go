@@ -9,14 +9,16 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/cmaster11/k8s-event-watcher"
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
-	"io/ioutil"
 	"k8s.io/api/core/v1"
-	"os"
-	"strings"
 )
 
 // This is our structure, largely populated by command-line arguments
@@ -28,10 +30,10 @@ type k8sEventWatcherCmd struct {
 	EventFilterConfigPath string
 
 	// Default amount of events repetitions before triggering an error
-	//MinRepetitions uint
+	// MinRepetitions uint
 
 	// Default deduplication duration
-	//DedupDuration time.Duration
+	// DedupDuration time.Duration
 
 	// The redis-host we're going to connect to for our queues.
 	RedisHost string
@@ -42,8 +44,11 @@ type k8sEventWatcherCmd struct {
 	// The (optional) redis-password we'll use.
 	RedisPassword string
 
-	// The redis-sockt we're going to use. (If used, we ignore the specified host / port)
+	// The redis-socket we're going to use. (If used, we ignore the specified host / port)
 	RedisSocket string
+
+	// Redis connection timeout
+	RedisDialTimeout time.Duration
 
 	// Tag applied to all results
 	Tag string
@@ -69,11 +74,11 @@ func (*k8sEventWatcherCmd) Usage() string {
 }
 
 // verbose shows a message only if we're running verbosely
-//func (p *k8sEventWatcherCmd) verbose(txt string) {
+// func (p *k8sEventWatcherCmd) verbose(txt string) {
 //	if p.Verbose {
 //		fmt.Print(txt)
 //	}
-//}
+// }
 
 //
 // Flag setup.
@@ -85,13 +90,14 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 	// via a configuration-file if it is present.
 	//
 	var defaults k8sEventWatcherCmd
-	//defaults.MinRepetitions = 0
-	//defaults.DedupDuration = 0
+	// defaults.MinRepetitions = 0
+	// defaults.DedupDuration = 0
 	defaults.Tag = ""
 	defaults.Verbose = false
 	defaults.RedisHost = "localhost:6379"
 	defaults.RedisDB = 0
 	defaults.RedisPassword = ""
+	defaults.RedisDialTimeout = 5 * time.Second
 	defaults.KubeConfigPath = ""
 	defaults.EventFilterConfigPath = ""
 
@@ -123,15 +129,16 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.EventFilterConfigPath, "watcher-config", defaults.EventFilterConfigPath, "Event watcher configuration file")
 
 	// Retry
-	//f.UintVar(&p.MinRepetitions, "min-repetitions", defaults.MinRepetitions, "How many times to an event has to occur before triggering an error.")
+	// f.UintVar(&p.MinRepetitions, "min-repetitions", defaults.MinRepetitions, "How many times to an event has to occur before triggering an error.")
 
-	//f.DurationVar(&p.DedupDuration, "dedup", defaults.DedupDuration, "The maximum duration of a deduplication.")
+	// f.DurationVar(&p.DedupDuration, "dedup", defaults.DedupDuration, "The maximum duration of a deduplication.")
 
 	// Redis
 	f.StringVar(&p.RedisHost, "redis-host", defaults.RedisHost, "Specify the address of the redis queue.")
 	f.IntVar(&p.RedisDB, "redis-db", defaults.RedisDB, "Specify the database-number for redis.")
 	f.StringVar(&p.RedisPassword, "redis-pass", defaults.RedisPassword, "Specify the password for the redis queue.")
 	f.StringVar(&p.RedisSocket, "redis-socket", defaults.RedisSocket, "If set, will be used for the redis connections.")
+	f.DurationVar(&p.RedisDialTimeout, "redis-timeout", defaults.RedisDialTimeout, "Redis connection timeout.")
 
 	// Tag
 	f.StringVar(&p.Tag, "tag", defaults.Tag, "Specify the tag to add to all events.")
@@ -218,16 +225,18 @@ func (p *k8sEventWatcherCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...in
 	//
 	if p.RedisSocket != "" {
 		p._r = redis.NewClient(&redis.Options{
-			Network:  "unix",
-			Addr:     p.RedisSocket,
-			Password: p.RedisPassword,
-			DB:       p.RedisDB,
+			Network:     "unix",
+			Addr:        p.RedisSocket,
+			Password:    p.RedisPassword,
+			DB:          p.RedisDB,
+			DialTimeout: p.RedisDialTimeout,
 		})
 	} else {
 		p._r = redis.NewClient(&redis.Options{
-			Addr:     p.RedisHost,
-			Password: p.RedisPassword,
-			DB:       p.RedisDB,
+			Addr:        p.RedisHost,
+			Password:    p.RedisPassword,
+			DB:          p.RedisDB,
+			DialTimeout: p.RedisDialTimeout,
 		})
 	}
 
