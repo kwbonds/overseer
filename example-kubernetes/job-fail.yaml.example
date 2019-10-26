@@ -1,0 +1,19 @@
+# This file creates a failing job, useful to test the k8s-event-watcher
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test
+  namespace: default
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      containers:
+        - command:
+            - sh
+            - exit
+            - "1"
+          image: alpine
+          name: main
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
