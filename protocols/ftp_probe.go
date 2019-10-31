@@ -225,18 +225,18 @@ func (s *FTPTest) RunTest(tst test.Test, target string, opts test.Options) error
 		//
 		// Retrieve the file.
 		//
-		resp, err := conn.Retr(file)
-		if err != nil {
-			return err
+		resp, errResp := conn.Retr(file)
+		if errResp != nil {
+			return errResp
 		}
 		defer resp.Close()
 
 		//
 		// Actually fetch the contents of the file.
 		//
-		buf, err := ioutil.ReadAll(resp)
-		if err != nil {
-			return err
+		buf, errRead := ioutil.ReadAll(resp)
+		if errRead != nil {
+			return errRead
 		}
 
 		//

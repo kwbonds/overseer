@@ -290,9 +290,7 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	//
 	// Setup a dialer which will be dual-stack
 	//
-	dialer := &net.Dialer{
-		DualStack: true,
-	}
+	dialer := &net.Dialer{}
 
 	//
 	// This is where some magic happens, we want to connect and do
@@ -495,7 +493,8 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	// Is the user expecting a regular expression to match the content?
 	//
 	if tst.Arguments["pattern"] != "" {
-		re, err := regexp.Compile("(?ms)" + tst.Arguments["pattern"])
+		var re *regexp.Regexp
+		re, err = regexp.Compile("(?ms)" + tst.Arguments["pattern"])
 		if err != nil {
 			return err
 		}
@@ -511,7 +510,8 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	// Is the user NOT expecting a regular expression to match the content?
 	//
 	if tst.Arguments["not-pattern"] != "" {
-		re, err := regexp.Compile("(?ms)" + tst.Arguments["not-pattern"])
+		var re *regexp.Regexp
+		re, err = regexp.Compile("(?ms)" + tst.Arguments["not-pattern"])
 		if err != nil {
 			return err
 		}
@@ -588,9 +588,8 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		//
 		// Check the expiration
 		//
-		hours, err := s.SSLExpiration(tst.Target, opts.Verbose)
-
-		if err == nil {
+		hours, errExpire := s.SSLExpiration(tst.Target, opts.Verbose)
+		if errExpire == nil {
 			// Is the age too short?
 			if int64(hours) < int64(period) {
 

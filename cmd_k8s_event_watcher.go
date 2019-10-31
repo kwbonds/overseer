@@ -273,7 +273,7 @@ func (p *k8sEventWatcherCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...in
 	fmt.Printf("k8s event watcher worker started [tag=%s]\n", p.Tag)
 
 	// Wait for k8s events
-	if err := eventWatcher.Start(p.onEvent); err != nil {
+	if err = eventWatcher.Start(p.onEvent); err != nil {
 		fmt.Printf("K8s event watcher start failed: %s\n", err.Error())
 		return subcommands.ExitFailure
 	}

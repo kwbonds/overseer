@@ -139,15 +139,15 @@ func (s *TCPTest) RunTest(tst test.Test, target string, opts test.Options) error
 	if tst.Arguments["banner"] != "" {
 
 		// Compile the regular expression
-		re, err := regexp.Compile("(?ms)" + tst.Arguments["banner"])
-		if err != nil {
-			return err
+		re, errCompile := regexp.Compile("(?ms)" + tst.Arguments["banner"])
+		if errCompile != nil {
+			return errCompile
 		}
 
 		// Read a single line of input
-		banner, err := bufio.NewReader(conn).ReadString('\n')
-		if err != nil {
-			return err
+		banner, errRead := bufio.NewReader(conn).ReadString('\n')
+		if errRead != nil {
+			return errRead
 		}
 
 		//

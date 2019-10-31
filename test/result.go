@@ -39,14 +39,14 @@ func ResultFromJSON(msg []byte) (*Result, error) {
 		// Is this old-overseer message type?
 		data := map[string]string{}
 
-		if err := json.Unmarshal(msg, &data); err != nil {
+		if err = json.Unmarshal(msg, &data); err != nil {
 			return nil, err
 		}
 
 		if timeStr, ok := data["time"]; ok {
-			timeInt, err := strconv.ParseInt(timeStr, 10, 64)
-			if err != nil {
-				return nil, err
+			timeInt, errConv := strconv.ParseInt(timeStr, 10, 64)
+			if errConv != nil {
+				return nil, errConv
 			}
 
 			resultStr := data["result"]

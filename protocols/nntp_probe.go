@@ -143,9 +143,9 @@ func (s *NNTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		//
 		// Read the response
 		//
-		resp, err := bufio.NewReader(conn).ReadString('\n')
-		if err != nil {
-			return err
+		resp, errRead := bufio.NewReader(conn).ReadString('\n')
+		if errRead != nil {
+			return errRead
 		}
 
 		if !strings.HasPrefix(resp, "211") {

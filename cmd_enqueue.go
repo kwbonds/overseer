@@ -136,13 +136,13 @@ func (p *enqueueCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		//
 		// For each parsed job call `enqueueTest`.
 		//
-		err := helper.ParseFile(file, p.enqueueTest)
+		errParse := helper.ParseFile(file, p.enqueueTest)
 
 		//
 		// Did we see an error?
 		//
-		if err != nil {
-			fmt.Printf("Error parsing file: %s\n", err.Error())
+		if errParse != nil {
+			fmt.Printf("Error parsing file: %s\n", errParse)
 			return subcommands.ExitFailure
 		}
 

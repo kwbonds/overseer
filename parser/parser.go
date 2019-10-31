@@ -201,11 +201,11 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 	// Is this a macro-definition?
 	//
 	macro := regexp.MustCompile(`^([A-Z0-9]+)\s+are\s+(.*)$`)
-	match := macro.FindStringSubmatch(input)
-	if len(match) == 3 {
+	matchMacro := macro.FindStringSubmatch(input)
+	if len(matchMacro) == 3 {
 
-		name := match[1]
-		vals := match[2]
+		name := matchMacro[1]
+		vals := matchMacro[2]
 
 		//
 		// If this macro-exists that is a fatal error
@@ -293,12 +293,12 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 			// Create a new test, with the macro-host
 			// in-place of the original target.
 			//
-			new := fmt.Sprintf("%s %s", i, line[2])
+			newTst := fmt.Sprintf("%s %s", i, line[2])
 
 			//
 			// Call ourselves to run the test.
 			//
-			s.ParseLine(new, cb)
+			s.ParseLine(newTst, cb)
 		}
 
 		//

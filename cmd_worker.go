@@ -670,20 +670,20 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 		// multiple hosts we need to do this with a copy so that
 		// we don't lose the original target.
 		//
-		copy := tst
-		copy.Target = target
+		tstCopy := tst
+		tstCopy.Target = target
 
 		//
 		// We also want to filter out any password which was found
 		// on the input-line.
 		//
-		copy.Input = tst.Sanitize()
+		tstCopy.Input = tst.Sanitize()
 
 		//
 		// Now we can trigger the notification with our updated
 		// copy of the test.
 		//
-		p.notify(copy, result)
+		p.notify(tstCopy, result)
 	}
 
 	//
@@ -775,7 +775,7 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		//
 		// Get a job.
 		//
-		test, _ := p._r.BLPop(0, "overseer.jobs").Result()
+		testObject, _ := p._r.BLPop(0, "overseer.jobs").Result()
 
 		//
 		// Parse it
@@ -784,17 +784,18 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 		//
 		//   test[1] will be the value removed from the list.
 		//
-		if len(test) >= 1 {
-			job, err := parse.ParseLine(test[1], nil)
+		if len(testObject) >= 1 {
+			var job test.Test
+			job, err = parse.ParseLine(testObject[1], nil)
 
 			if err == nil {
 				p.runTest(job, opts)
 			} else {
-				fmt.Printf("Error parsing job from queue: %s - %s\n", test[1], err.Error())
+				fmt.Printf("Error parsing job from queue: %s - %s\n", testObject[1], err.Error())
 			}
 		}
 
 	}
 
-	return subcommands.ExitSuccess
+	// return subcommands.ExitSuccess
 }

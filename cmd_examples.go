@@ -61,8 +61,8 @@ func showExamples(filter string) {
 		x := protocols.ProtocolHandler(name)
 
 		// Show the output of that function
-		out := x.Example()
-		fmt.Printf("%s\n", out)
+		output := x.Example()
+		fmt.Printf("%s\n", output)
 
 		fmt.Printf("Arguments which are supported are now shown:\n\n")
 
