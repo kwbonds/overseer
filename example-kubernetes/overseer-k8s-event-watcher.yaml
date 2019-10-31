@@ -29,7 +29,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: overseer-k8s-event-watcher
-          image: cmaster11/overseer:release-1.11-4
+          image: cmaster11/overseer:release-1.11-5
           args:
             - k8s-event-watcher
             - -redis-host

@@ -27,7 +27,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: overseer-bridge-email
-          image: cmaster11/overseer-email-bridge:release-1.11-4
+          image: cmaster11/overseer-email-bridge:release-1.11-5
           # SMTP username/password from env
           #  env:
           #    - name: SMTP_USERNAME
