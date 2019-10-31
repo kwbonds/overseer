@@ -139,9 +139,9 @@ func (s *TCPTest) RunTest(tst test.Test, target string, opts test.Options) error
 	if tst.Arguments["banner"] != "" {
 
 		// Compile the regular expression
-		re, error := regexp.Compile("(?ms)" + tst.Arguments["banner"])
-		if error != nil {
-			return error
+		re, err := regexp.Compile("(?ms)" + tst.Arguments["banner"])
+		if err != nil {
+			return err
 		}
 
 		// Read a single line of input

@@ -13,6 +13,10 @@
 //
 //    with status 301
 //
+// You can allow multiple statuses by joining them with a comma:
+//
+//    with status 200,429
+//
 // Or if you do not care about the specific status-code at all, but you
 // wish to see an alert when a connection-refused/failed/timeout condition
 // occurs you could say:
@@ -126,7 +130,7 @@ func (s *HTTPTest) Arguments() map[string]string {
 		"password":    ".*",
 		"pattern":     ".*",
 		"not-pattern": ".*",
-		"status":      "^(any|[0-9]+)$",
+		"status":      "^(any|[0-9]+(?:,[0-9]+)*)$",
 		"tls":         "insecure",
 		"username":    ".*",
 	}
@@ -155,6 +159,10 @@ HTTP Tester
  with a HTTP status-code of 200, but you can change this via:
 
    with status 301
+
+ You can allow multiple statuses by joining them with a comma:
+
+   with status 200,429
 
  Or if you do not care about the specific status-code at all, but you
  wish to see an alert when a connection-refused/failed/timeout condition
@@ -420,19 +428,23 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	//
 	// The default status-code we accept as OK
 	//
-	ok := 200
+	allowedStatuses := []int{http.StatusOK}
 
 	//
 	// Did the user want to look for a specific status-code?
 	//
-	if tst.Arguments["status"] != "" {
-		// Status code might be "any"
-		if tst.Arguments["status"] != "any" {
-			ok, err = strconv.Atoi(tst.Arguments["status"])
-			if err != nil {
-				return err
+	if tst.Arguments["status"] != "" && tst.Arguments["status"] != "any" {
+
+		split := strings.Split(tst.Arguments["status"], ",")
+		for _, statusString := range split {
+			allowedStatus, errConv := strconv.Atoi(statusString)
+			if errConv != nil {
+				return errConv
 			}
+
+			allowedStatuses = append(allowedStatuses, allowedStatus)
 		}
+
 	}
 
 	//
@@ -441,8 +453,24 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	// If they mis-match that means the test failed, unless the user
 	// said "with status any".
 	//
-	if ok != status && (tst.Arguments["status"] != "any") {
-		return fmt.Errorf("status code was %d not %d", status, ok)
+	if tst.Arguments["status"] != "any" {
+
+		found := false
+		for _, allowedStatus := range allowedStatuses {
+			if status == allowedStatus {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			if len(allowedStatuses) == 1 {
+				return fmt.Errorf("status code was %d not %d", status, allowedStatuses[0])
+			}
+
+			return fmt.Errorf("status code was %d not one of %v", status, allowedStatuses)
+		}
+
 	}
 
 	//
@@ -467,9 +495,9 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	// Is the user expecting a regular expression to match the content?
 	//
 	if tst.Arguments["pattern"] != "" {
-		re, error := regexp.Compile("(?ms)" + tst.Arguments["pattern"])
-		if error != nil {
-			return error
+		re, err := regexp.Compile("(?ms)" + tst.Arguments["pattern"])
+		if err != nil {
+			return err
 		}
 
 		// Skip unless this handler matches the filter.
@@ -483,9 +511,9 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	// Is the user NOT expecting a regular expression to match the content?
 	//
 	if tst.Arguments["not-pattern"] != "" {
-		re, error := regexp.Compile("(?ms)" + tst.Arguments["not-pattern"])
-		if error != nil {
-			return error
+		re, err := regexp.Compile("(?ms)" + tst.Arguments["not-pattern"])
+		if err != nil {
+			return err
 		}
 
 		// Skip unless this handler matches the filter.
