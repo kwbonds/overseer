@@ -13,8 +13,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cmaster11/overseer/parser"
@@ -28,6 +30,9 @@ import (
 
 // This is our structure, largely populated by command-line arguments
 type workerCmd struct {
+	// How many parallel checks can we execute?
+	Parallel uint
+
 	// Should we run tests against IPv4 addresses?
 	IPv4 bool
 
@@ -150,6 +155,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	// via a configuration-file if it is present.
 	//
 	var defaults workerCmd
+	defaults.Parallel = uint(runtime.NumCPU())
 	defaults.IPv4 = true
 	defaults.IPv6 = true
 	defaults.Retry = true
@@ -184,6 +190,9 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	//
 	// Allow these defaults to be changed by command-line flags
 	//
+	// Worker
+	f.UintVar(&p.Parallel, "parallel", defaults.Parallel, "Number of parallel tests the worker can be handled at the same time.")
+
 	// Verbose
 	f.BoolVar(&p.Verbose, "verbose", defaults.Verbose, "Show more output.")
 
@@ -463,7 +472,7 @@ func (p *workerCmd) formatMetrics(tst test.Test, key string) string {
 // runTest is really the core of our application, as it is responsible
 // for receiving a test to execute, executing it, and then issuing
 // the notification with the result.
-func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
+func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) error {
 
 	// Create a map for metric-recording.
 	metrics := map[string]string{}
@@ -559,7 +568,7 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 		//
 		// Show what we're doing.
 		//
-		p.verbose(fmt.Sprintf("Running '%s' test against %s (%s)\n", testType, testTarget, target))
+		p.verbose(fmt.Sprintf("[W%d] Running '%s' test against %s (%s)\n", workerIdx, testType, testTarget, target))
 
 		//
 		// We'll repeat failing tests up to five times by default
@@ -718,6 +727,12 @@ func (p *workerCmd) runTest(tst test.Test, opts test.Options) error {
 //
 func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
+	// Sanity check
+	if p.Parallel == 0 {
+		fmt.Printf("Number of parallel workers must be > 0")
+		return subcommands.ExitFailure
+	}
+
 	//
 	// Connect to the redis-host.
 	//
@@ -765,37 +780,113 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	//
 	parse := parser.New()
 
-	fmt.Printf("worker started [tag=%s]\n", p.Tag)
+	// We want a graceful shutdown, e.g. if a long-running test is active at the moment we need to wait for it to
+	// complete before brutally exiting!
+	shouldExit := sync.NewCond(&sync.Mutex{})
+	onSignalInterrupt(func() {
+		shouldExit.Broadcast()
+	})
 
-	//
-	// Wait for jobs, in a blocking-manner.
-	//
-	for {
+	wg := &sync.WaitGroup{}
+	var idx uint
+	for idx = 1; idx <= p.Parallel; idx++ {
+		workerIdx := idx
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			p.workerLoop(workerIdx, shouldExit, &opts, parse)
+		}()
+	}
 
-		//
-		// Get a job.
-		//
-		testObject, _ := p._r.BLPop(0, "overseer.jobs").Result()
+	wg.Wait()
 
+	return subcommands.ExitSuccess
+}
+
+func (p *workerCmd) workerLoop(workerIdx uint, shouldExit *sync.Cond, opts *test.Options, parse *parser.Parser) {
+	fmt.Printf("worker %d started [tag=%s]\n", workerIdx, p.Tag)
+
+	exitLock := &sync.Mutex{}
+	exit := false
+
+	workerAvailableChan := make(chan bool)
+	testObjectChan := make(chan []string)
+
+	go func() {
+		shouldExit.L.Lock()
+		defer shouldExit.L.Unlock()
+		shouldExit.Wait()
+
+		exitLock.Lock()
+		defer exitLock.Unlock()
+		exit = true
+		close(testObjectChan)
+		close(workerAvailableChan)
+	}()
+
+	go func() {
+		for <-workerAvailableChan {
+			exitLock.Lock()
+			if exit {
+				exitLock.Unlock()
+				return
+			}
+			exitLock.Unlock()
+
+			// Get a job.
+			testObject, _ := p._r.BLPop(0, "overseer.jobs").Result()
+
+			exitLock.Lock()
+			if exit {
+				exitLock.Unlock()
+				if len(testObject) >= 1 {
+					// Requeue! Let's not lose the test
+					if _, err := p._r.RPush("overseer.jobs", testObject[1]).Result(); err != nil {
+						fmt.Printf("failed to requeue job `%s`: %v\n", testObject[1], err)
+					} else {
+						fmt.Printf("job requeued: %s\n", testObject[1])
+					}
+				} else {
+					fmt.Printf("Popped unsupported value: %v\n", testObject)
+				}
+				return
+			}
+			exitLock.Unlock()
+			testObjectChan <- testObject
+		}
+	}()
+
+	// Wait for jobs
+	workerAvailableChan <- true
+	for testObject := range testObjectChan {
 		//
 		// Parse it
 		//
-		//   test[0] will be "overseer.jobs"
+		//   testObject[0] will be "overseer.jobs"
 		//
-		//   test[1] will be the value removed from the list.
+		//   testObject[1] will be the value removed from the list.
 		//
 		if len(testObject) >= 1 {
 			var job test.Test
-			job, err = parse.ParseLine(testObject[1], nil)
+			job, err := parse.ParseLine(testObject[1], nil)
 
 			if err == nil {
-				p.runTest(job, opts)
+				p.runTest(workerIdx, job, *opts)
 			} else {
 				fmt.Printf("Error parsing job from queue: %s - %s\n", testObject[1], err.Error())
 			}
+		} else {
+			fmt.Printf("Popped unsupported value: %v\n", testObject)
 		}
 
+		exitLock.Lock()
+		if exit {
+			exitLock.Unlock()
+			break
+		}
+		exitLock.Unlock()
+		workerAvailableChan <- true
 	}
 
-	// return subcommands.ExitSuccess
+	fmt.Printf("Worker %d exiting\n", workerIdx)
 }

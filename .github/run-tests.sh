@@ -3,7 +3,6 @@ set -e
 DIR="$(dirname "$(command -v greadlink >/dev/null 2>&1 && greadlink -f "$0" || readlink -f "$0")")"
 
 # Install tools to test our code-quality.
-go get -u golang.org/x/lint/golint
 go install "$DIR/shadow-fix.go"
 go get -u honnef.co/go/tools/cmd/staticcheck
 
@@ -17,11 +16,6 @@ if [ -s $t ]; then
   exit 1
 fi
 rm $t
-
-# Run the linter
-echo "Launching linter .."
-golint ./...
-echo "Completed linter .."
 
 # Run the shadow-checker
 echo "Launching shadowed-variable check .."

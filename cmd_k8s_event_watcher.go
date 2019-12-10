@@ -284,7 +284,7 @@ func (p *k8sEventWatcherCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...in
 	// Wait for events, in a blocking-manner.
 	//
 	fmt.Println("Press 'CTRL-C' to exit...")
-	waitForCtrlC()
+	waitForSignalInterrupt()
 
 	return subcommands.ExitSuccess
 }
