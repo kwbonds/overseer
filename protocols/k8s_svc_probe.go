@@ -4,7 +4,7 @@
 //
 // This test is invoked via input like so:
 //
-//    service-doman must run k8s-svc
+//    service-domain must run k8s-svc
 //
 
 package protocols
