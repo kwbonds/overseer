@@ -117,23 +117,33 @@ In short using a central queue allows you to scale out the testing horizontally.
 
 To add your tests to the queue you should run:
 
-       $ overseer enqueue \
-           -redis-host=queue.example.com:6379 [-redis-pass='secret.here'] \
-           test.file.1 test.file.2 .. test.file.N
+    $ overseer enqueue \
+        -redis-host=queue.example.com:6379 [-redis-pass='secret.here'] \
+        test.file.1 test.file.2 .. test.file.N
 
 This will parse the tests contained in the specified files, adding each of them to the (shared) redis queue. 
 Once all of the jobs have been parsed and inserted into the queue the process will terminate.
 
 To drain the queue you can should now start a worker, which will fetch the tests and process them:
 
-       $ overseer worker -verbose \
-          -redis-host=queue.example.com:6379 [-redis-pass='secret']
+    $ overseer worker -verbose \
+        -redis-host=queue.example.com:6379 [-redis-pass='secret']
 
 The worker will run constantly, not terminating unless manually killed. With
 the worker running you can add more jobs by re-running the `overseer enqueue`
 command.
 
 To run tests in parallel simply launch more instances of the worker, on the same host, or on different hosts.
+
+### Parallel execution
+
+By default the worker will process in parallel a number of tests equal to the number of the current machine's logical
+CPUs. To alter this behavior, you can use the `-parallel` flag:
+
+    $ # Runs 9 tests at a time
+    $ overseer worker -parallel 9
+    
+Using a higher number of parallel tests is useful if running any long-running tests, to not delay executions of any others.
 
 ### Running Automatically
 
