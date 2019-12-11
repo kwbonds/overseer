@@ -40,8 +40,8 @@ type Test struct {
 	// In the example above this would be `1.2.3.4 must run ftp`.
 	Input string
 
-	// MaxRetries overrides the global overseer setting for max test retries, if >= 0
-	MaxRetries int
+	// MaxRetries overrides the global overseer setting for max test retries
+	MaxRetries *uint
 
 	// If not nil, avoid re-triggering the same notification on failure for the defined amount of time, or until test succeeds again
 	DedupDuration *time.Duration
@@ -53,6 +53,16 @@ type Test struct {
 	// with the value `2121` (as a string).
 	//
 	Arguments map[string]string
+
+	// PeriodTestDuration triggers a period test: Overseer will execute the defined test repeatedly for the specified
+	// duration, with pauses between subsequent tests determined by PeriodTestSleep.
+	PeriodTestDuration *time.Duration
+
+	// PeriodTestSleep defines how long Overseer will wait between each different repetition of the test in a period-test
+	PeriodTestSleep time.Duration
+
+	// PeriodTestThreshold defines the min percentage [0-1] of failing tests in a period which will trigger an alert.
+	PeriodTestThreshold *float32
 }
 
 // Sanitize returns a copy of the input string, but with any password

@@ -22,6 +22,7 @@ import (
 	"github.com/cmaster11/overseer/parser"
 	"github.com/cmaster11/overseer/protocols"
 	"github.com/cmaster11/overseer/test"
+	"github.com/cmaster11/overseer/utils"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
 	"github.com/marpaia/graphite-golang"
@@ -43,7 +44,7 @@ type workerCmd struct {
 	Retry bool
 
 	// If we should retry failed tests, how many times before we give up?
-	RetryCount int
+	RetryCount uint
 
 	// Prior to retrying a failed test how long should we pause?
 	RetryDelay time.Duration
@@ -74,6 +75,12 @@ type workerCmd struct {
 
 	// Should the testing, and the tests, be verbose?
 	Verbose bool
+
+	// Default period test sleep, if not overridden by specific test setting
+	PeriodTestSleep time.Duration
+
+	// Default period test threshold percentage, if not overridden by specific test setting
+	PeriodTestThreshold float32
 
 	// The handle to our redis-server
 	_r *redis.Client
@@ -169,6 +176,8 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 	defaults.RedisDB = 0
 	defaults.RedisPassword = ""
 	defaults.RedisDialTimeout = 5 * time.Second
+	defaults.PeriodTestSleep = 5 * time.Second
+	defaults.PeriodTestThreshold = 0
 
 	//
 	// If we have a configuration file then load it
@@ -205,7 +214,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 
 	// Retry
 	f.BoolVar(&p.Retry, "retry", defaults.Retry, "Should failing tests be retried a few times before raising a notification.")
-	f.IntVar(&p.RetryCount, "retry-count", defaults.RetryCount, "How many times to retry a test, before regarding it as a failure.")
+	f.UintVar(&p.RetryCount, "retry-count", defaults.RetryCount, "How many times to retry a test, before regarding it as a failure.")
 	f.DurationVar(&p.RetryDelay, "retry-delay", defaults.RetryDelay, "The time to sleep between failing tests.")
 
 	f.DurationVar(&p.DedupDuration, "dedup", defaults.DedupDuration, "The maximum duration of a deduplication.")
@@ -219,6 +228,10 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 
 	// Tag
 	f.StringVar(&p.Tag, "tag", defaults.Tag, "Specify the tag to add to all test-results.")
+
+	// Period test
+	f.DurationVar(&p.PeriodTestSleep, "period-test-sleep", defaults.PeriodTestSleep, "The sleeping interval between subsequent tests in a period-test.")
+	f.Var(utils.NewPercentageValue(defaults.PeriodTestThreshold, &p.PeriodTestThreshold), "period-test-threshold", "The percentage of failures need to trigger an alert in a period-test.")
 }
 
 // notify is used to store the result of a test in our redis queue.
@@ -474,6 +487,8 @@ func (p *workerCmd) formatMetrics(tst test.Test, key string) string {
 // the notification with the result.
 func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) error {
 
+	workerPrefix := fmt.Sprintf("[W%d] ", workerIdx)
+
 	// Create a map for metric-recording.
 	metrics := map[string]string{}
 
@@ -524,7 +539,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 			//
 			// Otherwise we're done.
 			//
-			fmt.Printf("WARNING: Failed to resolve %s for %s test!\n", testTarget, testType)
+			fmt.Printf(workerPrefix+"WARNING: Failed to resolve %s for %s test!\n", testTarget, testType)
 			return err
 		}
 
@@ -560,110 +575,17 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 		targets = append(targets, testTarget)
 	}
 
-	//
-	// Now for each target, run the test.
-	//
-	for _, target := range targets {
-
-		//
-		// Show what we're doing.
-		//
-		p.verbose(fmt.Sprintf("[W%d] Running '%s' test against %s (%s)\n", workerIdx, testType, testTarget, target))
-
-		//
-		// We'll repeat failing tests up to five times by default
-		//
-		attempt := 0
-		maxAttempts := p.RetryCount
-
-		//
-		// If retrying is disabled then don't retry.
-		//
-		if !p.Retry {
-			maxAttempts = attempt + 1
-		}
-
-		if tst.MaxRetries >= 0 {
-			maxAttempts = tst.MaxRetries + 1
-		}
-
-		//
-		// The result of the test.
-		//
-		var result error
-
-		//
-		// Record the start-time of the test.
-		//
-		timeA := time.Now()
-
-		//
-		// Start the count here for graphing execution attempts.
-		//
-		// We start at minus-one so that most case will show only
-		// zero attempts total.
-		//
-		c := -1
-
-		//
-		// Prepare to repeat the test.
-		//
-		// We only repeat tests that fail, if the test passes then
-		// it will only be executed once.
-		//
-		// This is designed to cope with transient failures, at a
-		// cost that flapping services might be missed.
-		//
-		for attempt < maxAttempts {
-			attempt++
-			c++
-
-			//
-			// Run the test
-			//
-			result = tmp.RunTest(tst, target, opts)
-
-			//
-			// If the test passed then we're good.
-			//
-			if result == nil {
-				p.verbose(fmt.Sprintf("\t[%d/%d] - Test passed.\n", attempt, maxAttempts))
-
-				// break out of loop
-				attempt = maxAttempts + 1
-
-			} else {
-
-				//
-				// The test failed.
-				//
-				// It will be repeated before a notifier
-				// is invoked.
-				//
-				p.verbose(fmt.Sprintf("\t[%d/%d] Test failed: %s\n", attempt, maxAttempts, result.Error()))
-
-				// If there are no more retries, do not wait
-				if maxAttempts-attempt > 0 {
-					//
-					// Sleep before retrying the failing test.
-					//
-					p.verbose(fmt.Sprintf("\t\tSleeping for %s before retrying\n", p.RetryDelay.String()))
-
-					time.Sleep(p.RetryDelay)
-				}
-			}
-		}
-
+	testEndFn := func(startTime time.Time, target string, attempts uint, result error) {
 		//
 		// Now the test is complete we can record the time it
 		// took to carry out, and the number of attempts it
 		// took to complete.
 		//
 		timeB := time.Now()
-		duration := timeB.Sub(timeA)
+		duration := timeB.Sub(startTime)
 		diff := fmt.Sprintf("%f", float64(duration)/float64(time.Millisecond))
 		metrics[p.formatMetrics(tst, "duration")] = diff
-		metrics[p.formatMetrics(tst, "attempts")] = fmt.Sprintf("%d", c)
+		metrics[p.formatMetrics(tst, "attempts")] = fmt.Sprintf("%d", attempts)
 
 		//
 		// Post the result of the test to the notifier.
@@ -694,6 +616,157 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 		//
 		p.notify(tstCopy, result)
 	}
+
+	wg := &sync.WaitGroup{}
+
+	//
+	// Now for each target, run the test.
+	//
+	for _, target := range targets {
+		wg.Add(1)
+		go func() {
+
+			// Is this a period test?
+			if tst.PeriodTestDuration != nil {
+				periodTestDuration := *tst.PeriodTestDuration
+				periodTestSleep := tst.PeriodTestSleep
+				if periodTestSleep == 0 {
+					periodTestSleep = p.PeriodTestSleep
+				}
+				periodTestThreshold := p.PeriodTestThreshold
+				if tst.PeriodTestThreshold != nil {
+					periodTestThreshold = *tst.PeriodTestThreshold
+				}
+
+				p.verbose(fmt.Sprintf(workerPrefix+"Running '%s' period-test (duration: %s, sleep: %s, threshold: %.0f%%) against %s (%s)\n", testType, periodTestDuration, periodTestSleep, periodTestThreshold, testTarget, target))
+
+				// Start time
+				timeStart := time.Now()
+				timeEnd := timeStart.Add(periodTestDuration)
+
+				var countSuccess uint = 0
+				var countFail uint = 0
+
+				iteration := 0
+				for time.Now().Before(timeEnd) {
+					iteration++
+					err := tmp.RunTest(tst, target, opts)
+					if err != nil {
+						countFail++
+						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d failed): %s\n", iteration, err.Error()))
+					} else {
+						countSuccess++
+						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d success)\n", iteration))
+					}
+
+					time.Sleep(periodTestSleep)
+				}
+
+				totalAttempts := countFail + countSuccess
+
+				errPercentage := float32(countFail) / float32(totalAttempts)
+				var result error
+				if errPercentage > periodTestThreshold {
+					result = fmt.Errorf("%d tests failed out of %d (%.2f%%)", countFail, totalAttempts, errPercentage*100)
+					p.verbose(fmt.Sprintf(workerPrefix+"Test failed: %s\n", result.Error()))
+				} else {
+					p.verbose(fmt.Sprintf(workerPrefix+"Test passed: %d tests failed out of %d (%.2f%%)\n", countFail, totalAttempts, errPercentage*100))
+				}
+
+				testEndFn(timeStart, target, totalAttempts, result)
+				wg.Done()
+				return
+			}
+
+			p.verbose(fmt.Sprintf(workerPrefix+"Running '%s' test against %s (%s)\n", testType, testTarget, target))
+
+			//
+			// We'll repeat failing tests up to five times by default
+			//
+			var attempt uint = 0
+			var maxAttempts uint = p.RetryCount
+
+			//
+			// If retrying is disabled then don't retry.
+			//
+			if !p.Retry {
+				maxAttempts = attempt + 1
+			}
+
+			if tst.MaxRetries != nil {
+				maxAttempts = *tst.MaxRetries + 1
+			}
+
+			//
+			// The result of the test.
+			//
+			var result error
+
+			//
+			// Record the start-time of the test.
+			//
+			timeA := time.Now()
+
+			//
+			// Start the count here for graphing execution attempts.
+			//
+			var c uint = 0
+
+			//
+			// Prepare to repeat the test.
+			//
+			// We only repeat tests that fail, if the test passes then
+			// it will only be executed once.
+			//
+			// This is designed to cope with transient failures, at a
+			// cost that flapping services might be missed.
+			//
+			for attempt < maxAttempts {
+				attempt++
+				c++
+
+				//
+				// Run the test
+				//
+				result = tmp.RunTest(tst, target, opts)
+
+				//
+				// If the test passed then we're good.
+				//
+				if result == nil {
+					p.verbose(fmt.Sprintf(workerPrefix+"[%d/%d] - Test passed.\n", attempt, maxAttempts))
+
+					// break out of loop
+					attempt = maxAttempts + 1
+
+				} else {
+
+					//
+					// The test failed.
+					//
+					// It will be repeated before a notifier
+					// is invoked.
+					//
+					p.verbose(fmt.Sprintf(workerPrefix+"[%d/%d] Test failed: %s\n", attempt, maxAttempts, result.Error()))
+
+					// If there are no more retries, do not wait
+					if maxAttempts-attempt > 0 {
+						//
+						// Sleep before retrying the failing test.
+						//
+						p.verbose(fmt.Sprintf(workerPrefix+"Sleeping for %s before retrying\n", p.RetryDelay.String()))
+
+						time.Sleep(p.RetryDelay)
+					}
+				}
+			}
+
+			testEndFn(timeA, target, c, result)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
 
 	//
 	// If we have a metric-host we can now submit each of the values
@@ -785,6 +858,11 @@ func (p *workerCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}
 	shouldExit := sync.NewCond(&sync.Mutex{})
 	onSignalInterrupt(func() {
 		shouldExit.Broadcast()
+
+		// If there is a second interrupt, immediately exit
+		onSignalInterrupt(func() {
+			os.Exit(0)
+		})
 	})
 
 	wg := &sync.WaitGroup{}

@@ -16,6 +16,9 @@ Table of Contents
   * [Kubernetes](#kubernetes)
   * [Dependencies](#dependencies)
 * [Executing Tests](#executing-tests)
+  * [Parallel execution](#parallel-execution)
+  * [Period-tests](#period-tests)
+  * [Local testing](#local-testing)
   * [Running Automatically](#running-automatically)
   * [Smoothing Test Failures](#smoothing-test-failures)
 * [Notifications](#notifications)
@@ -144,6 +147,52 @@ CPUs. To alter this behavior, you can use the `-parallel` flag:
     $ overseer worker -parallel 9
     
 Using a higher number of parallel tests is useful if running any long-running tests, to not delay executions of any others.
+
+### Period-tests
+
+Let's imagine that you want to test how many times your web service fails in 1 minute. You can run period-tests:
+
+    https://example.com must run http with pt-duration 60s with pt-sleep 2s with pt-threshold 15%
+    
+The previous line will trigger a period-test, where the same test `https://example.com must run http` 
+will be tested over and over for a duration of 60 seconds (`pt-duration 60s`), with a pause of 2 seconds (`pt-sleep 2s`)
+between each test. At the end of the testing period, if the percentage of errors is higher than 15% (`pt-threshold 15%`), 
+an alert will be generated, e.g:
+
+    8 tests failed out of 21 (38.10%)
+    
+You can also test multiple cases with a dumb test:
+
+    dumb-test1 must run dumb-test with pt-duration 5s with pt-sleep 200ms with pt-threshold 0% with duration-max 100ms
+    dumb-test2 must run dumb-test with pt-duration 5s with pt-sleep 200ms with pt-threshold 20% with duration-max 100ms
+    dumb-test3 must run dumb-test with pt-duration 5s with pt-sleep 200ms with pt-threshold 40% with duration-max 100ms
+    
+If no `pt-sleep` is defined, Overseer will default to the `-period-test-sleep` command line variable value, or to `5s`.
+If no `pt-threshold` is defined, Overseer will default to the `-period-test-threshold` command line variable value, or to `0%`.
+
+Note: the `pt-` flags are shortened versions of the also usable longer tags:
+ 
+    pt-duration -> period-test-duration
+    pt-sleep -> period-test-sleep
+    pt-threshold -> period-test-threshold
+    
+### Local testing
+
+You can test Overseer functionalities locally using some scripts.
+
+Setup Overseer with:
+
+* Run a local redis: `./scripts/test-run-redis.sh` (hosts the processing queue)
+* Run a local worker: `./scripts/test-run-worker.sh` (runs the actual tests)
+* Run a local webhook bridge: `./scripts/test-run-webhook-bridge.sh` (fetches test results from the queue and triggers the webhook)
+* Run a local http webhook listener: `./scripts/test-run-http-dump.sh` (listens for webhooks requests and dumps them to `stdout`)
+
+Run tests with:
+
+* Sample dumb tests: `./scripts/test-run-enqueue.sh`
+* An always-failing test: `./scripts/test-run-enqueue-fail.sh`
+* An sample period-test: `./scripts/test-run-enqueue-period.sh`
+* Custom rules: `./scripts/test-run-enqueue-stdin.sh "https://google.com must run http"`
 
 ### Running Automatically
 

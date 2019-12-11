@@ -27,6 +27,7 @@ import (
 
 	"github.com/cmaster11/overseer/protocols"
 	"github.com/cmaster11/overseer/test"
+	"github.com/cmaster11/overseer/utils"
 )
 
 // Parser holds our parser-state.
@@ -313,7 +314,6 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 	//
 	// Create a temporary structure to hold our test
 	//
-	result.MaxRetries = -1
 	result.Target = testTarget
 	result.Type = testType
 	result.Input = input
@@ -334,11 +334,15 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 		switch arg {
 		// Is there a custom per-test override?
 		case "retries":
-			maxRetries, err := strconv.ParseInt(val, 10, 32)
+			maxRetries, err := strconv.ParseInt(val, 10, 0)
 			if err != nil {
 				return result, fmt.Errorf("non-numeric argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
 			}
-			result.MaxRetries = int(maxRetries)
+			if maxRetries < 0 {
+				return result, fmt.Errorf("argument '%s' for test-type '%s' in input '%s' must be >= 0", arg, testType, input)
+			}
+			maxRetriesUInt := uint(maxRetries)
+			result.MaxRetries = &maxRetriesUInt
 
 			// We don't want to pass a non-test var to the actual test
 			delete(result.Arguments, arg)
@@ -352,6 +356,46 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 			}
 
 			result.DedupDuration = &duration
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+
+		case "pt-duration", "period-test-duration":
+			duration, err := time.ParseDuration(val)
+			if err != nil {
+				return result, fmt.Errorf("non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			}
+			if duration < 0 {
+				return result, fmt.Errorf("duration argument '%s' for test-type '%s' in input '%s' must be > 0", arg, testType, input)
+			}
+
+			result.PeriodTestDuration = &duration
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+		case "pt-sleep", "period-test-sleep":
+			duration, err := time.ParseDuration(val)
+			if err != nil {
+				return result, fmt.Errorf("non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			}
+			if duration < 0 {
+				return result, fmt.Errorf("duration argument '%s' for test-type '%s' in input '%s' must be > 0", arg, testType, input)
+			}
+
+			result.PeriodTestSleep = duration
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+		case "pt-threshold", "period-test-threshold":
+			percentage, err := utils.ParsePercentage(val)
+			if err != nil {
+				return result, fmt.Errorf("non-percentage argument '%s' for test-type '%s' in input '%s': %s", arg, testType, input, err.Error())
+			}
+
+			result.PeriodTestThreshold = &percentage
 
 			// We don't want to pass a non-test var to the actual test
 			delete(result.Arguments, arg)
