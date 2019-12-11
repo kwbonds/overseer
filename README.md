@@ -176,6 +176,9 @@ Note: the `pt-` flags are shortened versions of the also usable longer tags:
     pt-sleep -> period-test-sleep
     pt-threshold -> period-test-threshold
     
+Note: period-tests, by default, have no enabled [deduplication](#deduplication) rules. To enable deduplication, you need
+to manually add the `with dedup 5m` flag.
+    
 ### Local testing
 
 You can test Overseer functionalities locally using some scripts.

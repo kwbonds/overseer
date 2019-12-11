@@ -267,12 +267,7 @@ func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 		testResult.Error = &errorString
 	}
 
-	if testDefinition.DedupDuration == nil && p.DedupDuration > 0 {
-		// Assign a default dedup duration
-		testDefinition.DedupDuration = &p.DedupDuration
-	}
-
-	// If test has a deduplication rule, avoid re-triggering a notification if not needed, or clean the dedup cache if needed
+	// If test has a deduplication rule, avoid re-triggering a notification if not needed, or clean the dedup cache if needed.
 	if testDefinition.DedupDuration != nil {
 
 		hash := testResult.Hash()
@@ -491,6 +486,12 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 
 	// Create a map for metric-recording.
 	metrics := map[string]string{}
+
+	// If there are no deduplication rules, assign the default worker one. Unless the test is a period-test
+	if tst.DedupDuration == nil && tst.PeriodTestDuration == nil && p.DedupDuration > 0 {
+		// Assign a default dedup duration
+		tst.DedupDuration = &p.DedupDuration
+	}
 
 	//
 	// Setup our local state.
