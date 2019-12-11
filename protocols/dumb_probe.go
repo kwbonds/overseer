@@ -22,8 +22,8 @@ type DumbTest struct {
 // their values.
 func (s *DumbTest) Arguments() map[string]string {
 	known := map[string]string{
-		"duration-min": `^[-+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
-		"duration-max": `^[-+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
+		"duration-min": `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
+		"duration-max": `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 	}
 	return known
 }
@@ -50,7 +50,7 @@ Performs a test of random duration and result.
 func (s *DumbTest) RunTest(tst test.Test, target string, opts test.Options) error {
 	var err error
 
-	durationMin := 1 * time.Second
+	durationMin := 0 * time.Second
 	durationMax := 5 * time.Second
 
 	if tst.Arguments["duration-min"] != "" {
@@ -58,11 +58,17 @@ func (s *DumbTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		if err != nil {
 			return err
 		}
+		if durationMin < 0 {
+			return fmt.Errorf("duration-min must be > 0")
+		}
 	}
 	if tst.Arguments["duration-max"] != "" {
 		durationMax, err = time.ParseDuration(tst.Arguments["duration-max"])
 		if err != nil {
 			return err
+		}
+		if durationMax < 0 {
+			return fmt.Errorf("duration-max must be > 0")
 		}
 	}
 

@@ -529,9 +529,8 @@ func TestMaxRetries(t *testing.T) {
 			continue
 		}
 
-		if tst.MaxRetries != idx {
-			t.Errorf("Invalid maxRetries number. Expected %d, got %d", idx, tst.MaxRetries)
-
+		if tst.MaxRetries != nil && *tst.MaxRetries != uint(idx) {
+			t.Errorf("Invalid maxRetries number. Expected %d, got %d", idx, *tst.MaxRetries)
 		}
 	}
 }
