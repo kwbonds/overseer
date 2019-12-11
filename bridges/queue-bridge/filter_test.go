@@ -31,6 +31,7 @@ func TestNewResultFilterFromQuery(t *testing.T) {
 	testSyntaxOK(t, "input=a.*")
 	testSyntaxOK(t, "target=a.*")
 	testSyntaxOK(t, "error=a.*")
+	testSyntaxOK(t, "details=a.*")
 
 	// Combined
 	testSyntaxOK(t, "error=a.*,input=a.*,isDedup=false")
@@ -73,6 +74,8 @@ func TestNewResultFilterFromQuery(t *testing.T) {
 	testMatchOK(t, "target=a.*", &test.Result{Target: "aaaa"})
 	errAAA := "oaaa"
 	testMatchOK(t, "error=a.*", &test.Result{Error: &errAAA})
+	detailsAAA := "oaaa"
+	testMatchOK(t, "details=a.*", &test.Result{Details: &detailsAAA})
 
 	testMatchBad(t, "error=^a.*", &test.Result{Error: &errAAA})
 	testMatchBad(t, "error=^a.*", &test.Result{Error: nil})
