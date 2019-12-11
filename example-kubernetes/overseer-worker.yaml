@@ -28,7 +28,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: overseer-worker
-          image: cmaster11/overseer:release-1.11-5
+          image: cmaster11/overseer:1.12.1
           args:
             - worker
             - -redis-host
@@ -44,3 +44,6 @@ spec:
             # How long do we want to wait before being notified again about the test results?
             - -dedup
             - "5m"
+            # How many tests to run in parallel
+            - -parallel
+            - "8"
