@@ -656,7 +656,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 					iteration++
 					iterationStartTime := time.Now()
 					err := tmp.RunTest(tst, target, opts)
-					iterationDuration := time.Now().Sub(iterationStartTime)
+					iterationDuration := time.Since(iterationStartTime)
 					iterationElapsedString := fmt.Sprintf("%.2fms", float64(iterationDuration)/float64(time.Millisecond))
 					if err != nil {
 						countFail++
