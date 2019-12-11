@@ -1,8 +1,8 @@
 # Changelog
 
-## [2019/12/11] cmaster11/overseer:1.12.1
+## [2019/12/11] cmaster11/overseer:1.12.2
 
-* More reasonable tag names
+* More reasonable release tag names.
 * You can now perform [period-tests](./README.md#period-tests):
 
 > What if you want to test how many times your web service fails in 1 minute?
