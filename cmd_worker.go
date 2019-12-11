@@ -660,11 +660,12 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 					iterationElapsedString := fmt.Sprintf("%.2fms", float64(iterationDuration)/float64(time.Millisecond))
 					if err != nil {
 						countFail++
-						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d failed, elapsed %s): %s\n", iteration, iterationElapsedString, err.Error()))
-						errorStrings = append(errorStrings, err.Error())
+						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d failed, took %s): %s\n", iteration, iterationElapsedString, err.Error()))
+						errString := fmt.Sprintf("test %d failed, took %s: %s", iteration, iterationElapsedString, err.Error())
+						errorStrings = append(errorStrings, errString)
 					} else {
 						countSuccess++
-						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d success, elapsed %s)\n", iteration, iterationElapsedString))
+						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d success, took %s)\n", iteration, iterationElapsedString))
 					}
 
 					time.Sleep(periodTestSleep)
