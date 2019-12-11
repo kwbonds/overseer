@@ -53,16 +53,13 @@ var TemplateSubject = `Overseer [
 // notification to the user.
 var TemplateBody = `
 Overseer: 
-{{- if .error -}}
-	Error
-	{{- if .isDedup}} (duplicated){{end -}}
-	: {{.error}}
+{{- if .error }} Error
+{{- if .isDedup}} (duplicated){{end -}}
+: {{.error}}
 {{- else -}}
-	{{- if .recovered -}}
-	Test recovered
-	{{- else -}}
-	Test ok
-	{{- end -}}
+{{- if .recovered }} Test recovered
+{{- else }} Test ok
+{{- end -}}
 {{- end}}
 
 {{- if .details}}
