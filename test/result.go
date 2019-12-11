@@ -19,6 +19,9 @@ type Result struct {
 	// If not nil, test has failed
 	Error *string `json:"error"`
 
+	// Result details
+	Details *string `json:"details"`
+
 	// If true, this alert is a duplicate of an ongoing alert
 	IsDedup bool `json:"isDedup"`
 

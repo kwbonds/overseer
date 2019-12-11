@@ -33,6 +33,7 @@ type resultFilter struct {
 	Input     *k8seventwatcher.Regexp
 	Target    *k8seventwatcher.Regexp
 	Error     *k8seventwatcher.Regexp
+	Details   *k8seventwatcher.Regexp
 	IsDedup   *bool
 	Recovered *bool
 }
@@ -52,6 +53,10 @@ func (f *resultFilter) Matches(result *test.Result) bool {
 	}
 	if f.Error != nil && (result.Error == nil ||
 		!f.Error.MatchString(*result.Error)) {
+		return false
+	}
+	if f.Details != nil && (result.Details == nil ||
+		!f.Details.MatchString(*result.Details)) {
 		return false
 	}
 
@@ -141,6 +146,8 @@ func newResultFilterFromQuery(queryString string) (*resultFilter, error) {
 				filter.Target = queryRegex
 			case "error":
 				filter.Error = queryRegex
+			case "details":
+				filter.Details = queryRegex
 			default:
 				return nil, fmt.Errorf("unhandled filter key: %s", queryKey)
 			}

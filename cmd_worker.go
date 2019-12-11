@@ -235,7 +235,7 @@ func (p *workerCmd) SetFlags(f *flag.FlagSet) {
 }
 
 // notify is used to store the result of a test in our redis queue.
-func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
+func (p *workerCmd) notify(testDefinition test.Test, resultError error, details *string) error {
 
 	//
 	// If we don't have a redis-server then return immediately.
@@ -251,12 +251,14 @@ func (p *workerCmd) notify(testDefinition test.Test, resultError error) error {
 	// The message we'll publish will be a JSON hash
 	//
 	testResult := &test.Result{
-		Input:  testDefinition.Input,
-		Target: testDefinition.Target,
-		Time:   time.Now().Unix(),
-		Type:   testDefinition.Type,
-		Tag:    p.Tag,
+		Input:   testDefinition.Input,
+		Target:  testDefinition.Target,
+		Time:    time.Now().Unix(),
+		Type:    testDefinition.Type,
+		Tag:     p.Tag,
+		Details: details,
 	}
+
 	//
 	// Was the test result a failure?  If so update the object
 	// to contain the failure-message, and record that it was
@@ -535,7 +537,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 			//
 			// Notify the world about our DNS-failure.
 			//
-			p.notify(tst, fmt.Errorf("failed to resolve name %s", testTarget))
+			p.notify(tst, fmt.Errorf("failed to resolve name %s", testTarget), nil)
 
 			//
 			// Otherwise we're done.
@@ -576,7 +578,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 		targets = append(targets, testTarget)
 	}
 
-	testEndFn := func(startTime time.Time, target string, attempts uint, result error) {
+	testEndFn := func(startTime time.Time, target string, attempts uint, result error, details *string) {
 		//
 		// Now the test is complete we can record the time it
 		// took to carry out, and the number of attempts it
@@ -615,7 +617,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 		// Now we can trigger the notification with our updated
 		// copy of the test.
 		//
-		p.notify(tstCopy, result)
+		p.notify(tstCopy, result, details)
 	}
 
 	wg := &sync.WaitGroup{}
@@ -649,12 +651,14 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 				var countFail uint = 0
 
 				iteration := 0
+				var errorStrings []string
 				for time.Now().Before(timeEnd) {
 					iteration++
 					err := tmp.RunTest(tst, target, opts)
 					if err != nil {
 						countFail++
 						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d failed): %s\n", iteration, err.Error()))
+						errorStrings = append(errorStrings, err.Error())
 					} else {
 						countSuccess++
 						p.verbose(fmt.Sprintf(workerPrefix+"Period-test (test %d success)\n", iteration))
@@ -667,6 +671,15 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 
 				errPercentage := float32(countFail) / float32(totalAttempts)
 				var result error
+				var failuresString *string
+				if len(errorStrings) > 0 {
+					var lines []string
+					for _, errorString := range errorStrings {
+						lines = append(lines, fmt.Sprintf("- %s", errorString))
+					}
+					output := fmt.Sprintf("Period-test errors:\n%s", strings.Join(lines, "\n"))
+					failuresString = &output
+				}
 				if errPercentage > periodTestThreshold {
 					result = fmt.Errorf("%d tests failed out of %d (%.2f%%)", countFail, totalAttempts, errPercentage*100)
 					p.verbose(fmt.Sprintf(workerPrefix+"Test failed: %s\n", result.Error()))
@@ -674,7 +687,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 					p.verbose(fmt.Sprintf(workerPrefix+"Test passed: %d tests failed out of %d (%.2f%%)\n", countFail, totalAttempts, errPercentage*100))
 				}
 
-				testEndFn(timeStart, target, totalAttempts, result)
+				testEndFn(timeStart, target, totalAttempts, result, failuresString)
 				wg.Done()
 				return
 			}
@@ -762,7 +775,7 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 				}
 			}
 
-			testEndFn(timeA, target, c, result)
+			testEndFn(timeA, target, c, result, nil)
 			wg.Done()
 		}()
 	}

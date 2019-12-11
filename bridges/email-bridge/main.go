@@ -65,6 +65,10 @@ Overseer:
 	{{- end -}}
 {{- end}}
 
+{{- if .details}}
+Details: {{.details}}
+{{- end}}
+
 Tag: {{if .tag}}{{.tag}}{{else}}None{{end}}
 Input: {{.input}}
 
@@ -122,6 +126,7 @@ func (bridge *EmailBridge) Process(msg []byte) {
 		"input":     testResult.Input,
 		"type":      testResult.Type,
 		"date":      time.Now().UTC().String(),
+		"details":   testResult.Details,
 	}
 
 	//
