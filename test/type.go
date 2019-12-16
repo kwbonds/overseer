@@ -46,6 +46,9 @@ type Test struct {
 	// If not nil, avoid re-triggering the same notification on failure for the defined amount of time, or until test succeeds again
 	DedupDuration *time.Duration
 
+	// Total-test timeout
+	Timeout *time.Duration
+
 	// Arguments contains a map of any optional arguments supplied to
 	// test test.
 	//
