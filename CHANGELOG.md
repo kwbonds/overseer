@@ -1,5 +1,13 @@
 # Changelog
 
+## [2019/12/16] cmaster11/overseer:1.12.5
+
+* You can now use a per-test `timeout` flag, which will override the worker one if set.
+* HTTP test has new timeouts:
+    * `connect-timeout`: fails if worker takes too long to establish a connection to the server.
+    * `tls-timeout`: fails if worker takes too long to perform the TLS handshake with the server.
+    * `resp-header-timeout`: fails if server takes too long to send headers back.
+
 ## [2019/12/11] cmaster11/overseer:1.12.4
 
 * More reasonable release tag names.
