@@ -121,18 +121,21 @@ type HTTPTest struct {
 // their values.
 func (s *HTTPTest) Arguments() map[string]string {
 	known := map[string]string{
-		"user-agent":  ".*",
-		"content":     ".*",
-		"not-content": ".*",
-		"data":        ".*",
-		"expiration":  "^(any|[0-9]+[hd]?)$",
-		"method":      "^(GET|HEAD|POST|PUT|PATCH|DELETE)$",
-		"password":    ".*",
-		"pattern":     ".*",
-		"not-pattern": ".*",
-		"status":      "^(any|[0-9]+(?:,[0-9]+)*)$",
-		"tls":         "insecure",
-		"username":    ".*",
+		"user-agent":          ".*",
+		"content":             ".*",
+		"not-content":         ".*",
+		"data":                ".*",
+		"expiration":          "^(any|[0-9]+[hd]?)$",
+		"method":              "^(GET|HEAD|POST|PUT|PATCH|DELETE)$",
+		"password":            ".*",
+		"pattern":             ".*",
+		"not-pattern":         ".*",
+		"status":              "^(any|[0-9]+(?:,[0-9]+)*)$",
+		"tls":                 "insecure",
+		"username":            ".*",
+		"connect-timeout":     `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
+		"tls-timeout":         `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
+		"resp-header-timeout": `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 	}
 	return known
 }
@@ -292,6 +295,14 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	//
 	dialer := &net.Dialer{}
 
+	if connectTimeoutString := tst.Arguments["connect-timeout"]; connectTimeoutString != "" {
+		connectTimeout, errParse := time.ParseDuration(connectTimeoutString)
+		if errParse != nil {
+			return errParse
+		}
+		dialer.Timeout = connectTimeout
+	}
+
 	//
 	// This is where some magic happens, we want to connect and do
 	// a http check on http://example.com/, but we want to do that
@@ -333,6 +344,22 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		DialContext: dial,
 	}
 
+	if tlsTimeoutString := tst.Arguments["tls-timeout"]; tlsTimeoutString != "" {
+		tlsTimeout, errParse := time.ParseDuration(tlsTimeoutString)
+		if errParse != nil {
+			return errParse
+		}
+		tr.TLSHandshakeTimeout = tlsTimeout
+	}
+
+	if headerTimeoutString := tst.Arguments["resp-header-timeout"]; headerTimeoutString != "" {
+		headerTimeout, errParse := time.ParseDuration(headerTimeoutString)
+		if errParse != nil {
+			return errParse
+		}
+		tr.ResponseHeaderTimeout = headerTimeout
+	}
+
 	//
 	// If we're running insecurely then ignore SSL errors
 	//
@@ -340,12 +367,18 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
+	// Total request timeout
+	timeout := opts.Timeout
+	if tst.Timeout != nil {
+		timeout = *tst.Timeout
+	}
+
 	//
 	// Create a client with a timeout, disabled redirection, and
 	// the magical transport we've just created.
 	//
 	var netClient = &http.Client{
-		Timeout: opts.Timeout,
+		Timeout: timeout,
 
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse

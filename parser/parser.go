@@ -355,7 +355,28 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 				return result, fmt.Errorf("non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
 			}
 
+			if duration < 0 {
+				return result, fmt.Errorf("duration argument '%s' for test-type '%s' in input '%s' must be > 0", arg, testType, input)
+			}
+
 			result.DedupDuration = &duration
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+
+			// Override worker-default timeout
+		case "timeout":
+			duration, err := time.ParseDuration(val)
+			if err != nil {
+				return result, fmt.Errorf("non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			}
+
+			if duration < 0 {
+				return result, fmt.Errorf("duration argument '%s' for test-type '%s' in input '%s' must be > 0", arg, testType, input)
+			}
+
+			result.Timeout = &duration
 
 			// We don't want to pass a non-test var to the actual test
 			delete(result.Arguments, arg)

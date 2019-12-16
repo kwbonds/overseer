@@ -1,6 +1,6 @@
 # Changelog
 
-## [2019/12/11] cmaster11/overseer:1.12.3
+## [2019/12/11] cmaster11/overseer:1.12.4
 
 * More reasonable release tag names.
 * You can now perform [period-tests](./README.md#period-tests):
