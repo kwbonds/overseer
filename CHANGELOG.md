@@ -1,6 +1,6 @@
 # Changelog
 
-## [2019/12/17] cmaster11/overseer:1.12.6
+## [2019/12/17] cmaster11/overseer:1.12.7
 
 * BREAKING: new version of [k8s-event-watcher](https://github.com/cmaster11/k8s-event-watcher):
     * Filters configuration now accepts any field name, and a new `rules` keyword has been introduced:
