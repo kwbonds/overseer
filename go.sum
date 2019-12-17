@@ -10,6 +10,8 @@ github.com/cmaster11/k8s-event-watcher v0.0.5 h1:gIy6cPIeC+tEIW94mhqb4HEXv0tQfuP
 github.com/cmaster11/k8s-event-watcher v0.0.5/go.mod h1:Nkxgju9HM07OonbGjiuq0Cf+/Qv/n/wqQhsKq8DErGc=
 github.com/cmaster11/k8s-event-watcher v0.0.6 h1:BNINbGF+xMrH6qb68JeAG7JI6bCg/2Dgx0W/v9ozuuE=
 github.com/cmaster11/k8s-event-watcher v0.0.6/go.mod h1:Nkxgju9HM07OonbGjiuq0Cf+/Qv/n/wqQhsKq8DErGc=
+github.com/cmaster11/k8s-event-watcher v0.0.7 h1:HzDPkpCWCpUKsjhzU/bLuRfYcRJ3tbP6Gwn0oHUJya8=
+github.com/cmaster11/k8s-event-watcher v0.0.7/go.mod h1:Nkxgju9HM07OonbGjiuq0Cf+/Qv/n/wqQhsKq8DErGc=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

@@ -1,3 +1,23 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: overseer-k8s-event-watcher-config
+  namespace: overseer
+data:
+  event-watcher-config.yaml: |
+    # Do we want to only trigger alerts for future events?
+    sinceNow: true
+    # Do we want to find failed jobs/cron jobs?
+    filters:
+      - rules:
+          involvedObject.kind: Job
+          reason: BackoffLimitExceeded
+          # Watch only for specific namespace
+          # involvedObject.namespace: my-namespace
+          # Watch only for specific pod names
+          # involvedObject.name: "^*.fail"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,22 +69,3 @@ spec:
         - name: overseer-k8s-event-watcher-config
           configMap:
             name: overseer-k8s-event-watcher-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: overseer-k8s-event-watcher-config
-  namespace: overseer
-data:
-  event-watcher-config.yaml: |
-    # Do we want to only trigger alerts for future events?
-    sinceNow: true
-    # Do we want to find failed jobs/cron jobs?
-    filters:
-      - rules:
-          involvedObject.kind: Job
-          reason: BackoffLimitExceeded
-          # Watch only for specific namespace
-          # involvedObject.namespace: my-namespace
-          # Watch only for specific pod names
-          # involvedObject.name: "^*.fail"

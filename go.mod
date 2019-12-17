@@ -3,7 +3,7 @@ module github.com/cmaster11/overseer
 go 1.13
 
 require (
-	github.com/cmaster11/k8s-event-watcher v0.0.6
+	github.com/cmaster11/k8s-event-watcher v0.0.7
 	github.com/emersion/go-imap v1.0.0-beta.2
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
