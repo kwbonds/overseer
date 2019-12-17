@@ -61,7 +61,10 @@ data:
     sinceNow: true
     # Do we want to find failed jobs/cron jobs?
     filters:
-      - objectKind: Job
-        eventReason: BackoffLimitExceeded
-        # Watch only for specific namespace
-        # objectNamespace: my-namespace
+      - rules:
+          involvedObject.kind: Job
+          reason: BackoffLimitExceeded
+          # Watch only for specific namespace
+          # involvedObject.namespace: my-namespace
+          # Watch only for specific pod names
+          # involvedObject.name: "^*.fail"

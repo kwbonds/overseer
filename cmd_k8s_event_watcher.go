@@ -18,6 +18,7 @@ import (
 	"github.com/cmaster11/overseer/test"
 	"github.com/go-redis/redis"
 	"github.com/google/subcommands"
+	"gopkg.in/yaml.v2"
 	"k8s.io/api/core/v1"
 )
 
@@ -145,7 +146,7 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 }
 
 // notify is used to store the result of a test in our redis queue.
-func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatcher.EventFilter) {
+func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatcher.EventFilter, matchedFields map[string]interface{}) {
 
 	//
 	// If we don't have a redis-server then return immediately.
@@ -158,7 +159,7 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatch
 	}
 
 	target := fmt.Sprintf("%s/%s/%s", event.InvolvedObject.Namespace, event.InvolvedObject.Kind, event.InvolvedObject.Name)
-	input := fmt.Sprintf("%s [%s]", target, eventFilter.StringShort())
+	input := fmt.Sprintf("%s [%s]", target, eventFilter.String())
 
 	testResult := &test.Result{
 		Input:  input,
@@ -169,25 +170,30 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatch
 	}
 
 	eventFilterString := eventFilter.ToYAML()
+	matchedFieldsBytes, _ := yaml.Marshal(matchedFields)
 
 	errorString := strings.TrimSpace(fmt.Sprintf(`
 %s
 
-- Event reason: %s
-- Event type: %s
 - Object namespace: %s
 - Object kind: %s
 - Object name: %s
+- Event reason: %s
+- Event type: %s
+
 - Event filter:
+%s
+- Matched fields:
 %s
 `,
 		event.Message,
-		event.Reason,
-		event.Type,
 		event.InvolvedObject.Namespace,
 		event.InvolvedObject.Kind,
 		event.InvolvedObject.Name,
+		event.Reason,
+		event.Type,
 		indent(eventFilterString, "    "),
+		indent(string(matchedFieldsBytes), "    "),
 	))
 	testResult.Error = &errorString
 

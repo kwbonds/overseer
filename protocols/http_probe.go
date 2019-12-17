@@ -134,6 +134,7 @@ func (s *HTTPTest) Arguments() map[string]string {
 		"tls":                 "insecure",
 		"username":            ".*",
 		"connect-timeout":     `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
+		"connect-retries":     `^\d+$`,
 		"tls-timeout":         `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 		"resp-header-timeout": `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 	}
@@ -303,6 +304,15 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		dialer.Timeout = connectTimeout
 	}
 
+	maxConnectRetries := 0
+	if retriesString := tst.Arguments["connect-retries"]; retriesString != "" {
+		_maxDialerRetries, errParse := strconv.ParseInt(retriesString, 10, 0)
+		if errParse != nil {
+			return errParse
+		}
+		maxConnectRetries = int(_maxDialerRetries)
+	}
+
 	//
 	// This is where some magic happens, we want to connect and do
 	// a http check on http://example.com/, but we want to do that
@@ -329,10 +339,27 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 			addr = fmt.Sprintf("[%s]:%s", address, port)
 		}
 
-		//
-		// Use the replaced/updated address in our connection.
-		//
-		return dialer.DialContext(ctx, network, addr)
+		var conn net.Conn
+		var errDial error
+		for retryCount := 0; retryCount <= maxConnectRetries; retryCount++ {
+			//
+			// Use the replaced/updated address in our connection.
+			//
+			conn, errDial = dialer.DialContext(ctx, network, addr)
+			// On error, if we experience a connect timeout, give it another chance if there are more retries available
+			if errDial != nil {
+				errNet, ok := errDial.(net.Error)
+				if ok && errNet.Timeout() {
+					continue
+				}
+
+				// On any other error, no retries
+				break
+			}
+			break
+		}
+
+		return conn, errDial
 	}
 
 	//

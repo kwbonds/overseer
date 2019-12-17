@@ -8,8 +8,9 @@ It contains:
 * A service account, which will let `overseer` observe services in the k8s cluster.
 * An [`overseer-worker`](overseer-worker.yaml) deployment, to process tests to execute.
 * An [`overseer-bridge-webhook-n17`](overseer-bridge-webhook-n17.yaml) deployment, to notify errors using [Notify17](https://notify17.net).
-* An [`overseer-bridge-email`](overseer-bridge-email.optional.yaml) deployment, to notify errors using a standard email SMTP server.
-* An [`overseer-bridge-queue`](overseer-bridge-queue.optional.yaml) deployment, to duplicate test results and send them to multiple destination ([read more](#multiple-destinations-eg-notify17-and-email)).
+* An optional [`overseer-bridge-email`](overseer-bridge-email.optional.yaml) deployment, to notify errors using a standard email SMTP server.
+* An optional [`overseer-bridge-queue`](overseer-bridge-queue.optional.yaml) deployment, to duplicate test results and send them to multiple destination ([read more](#multiple-destinations-eg-notify17-and-email)).
+* An optional [`k8s-event-watcher`](overseer-k8s-event-watcher.optional.yaml) deployment, to observe Kubernetes events and raise alerts when certain conditions are met.
 * A [`CronJob`](overseer-enqueue.yaml) that will periodically enqueue the tests you want to run.
 * A simple [`Redis`](https://redis.io/) deployment, to hold test queues and results.
 
