@@ -1,5 +1,19 @@
 # Changelog
 
+## [2019/12/17] cmaster11/overseer:1.12.8
+
+* BREAKING: new behavior for `k8s-event-watcher` rules. Events will now be marked as errors **only** if `errorRules` rules exist and are matched:
+```yaml
+filters:
+- rules:
+    involvedObject.kind: Job
+    involvedObject.name: "^*.fail"
+    reason: BackoffLimitExceeded
+  errorRules:
+    # Any matched event is an error
+    type: .*
+```
+
 ## [2019/12/17] cmaster11/overseer:1.12.7
 
 * BREAKING: new version of [k8s-event-watcher](https://github.com/cmaster11/k8s-event-watcher):
