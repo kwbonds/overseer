@@ -146,7 +146,7 @@ func (p *k8sEventWatcherCmd) SetFlags(f *flag.FlagSet) {
 }
 
 // notify is used to store the result of a test in our redis queue.
-func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatcher.EventFilter, matchedFields map[string]interface{}) {
+func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatcher.EventFilter, matchResult *k8seventwatcher.MatchResult) {
 
 	//
 	// If we don't have a redis-server then return immediately.
@@ -170,32 +170,55 @@ func (p *k8sEventWatcherCmd) onEvent(event *v1.Event, eventFilter *k8seventwatch
 	}
 
 	eventFilterString := eventFilter.ToYAML()
-	matchedFieldsBytes, _ := yaml.Marshal(matchedFields)
+	matchedFieldsBytes, _ := yaml.Marshal(matchResult.MatchedFields)
 
-	errorString := strings.TrimSpace(fmt.Sprintf(`
-%s
+	// This is a little mess, but it's the clean way to convert the event to human-readable YAML
+	// Convert the event to a JSON string
+	eventJSONBytes, _ := json.Marshal(event)
+	// JSON to map
+	eventMap := make(map[string]interface{})
+	_ = json.Unmarshal(eventJSONBytes, &eventMap)
+	// Map to YAML
+	eventYAMLBytes, _ := yaml.Marshal(eventMap)
 
-- Object namespace: %s
-- Object kind: %s
-- Object name: %s
-- Event reason: %s
-- Event type: %s
-
-- Event filter:
-%s
-- Matched fields:
+	var matchedErrorFieldsString string
+	if len(matchResult.MatchedErrorFields) > 0 {
+		matchedErrorFieldsBytes, _ := yaml.Marshal(matchResult.MatchedErrorFields)
+		matchedErrorFieldsString = strings.TrimSpace(fmt.Sprintf(`
+Matched error fields:
 %s
 `,
-		event.Message,
-		event.InvolvedObject.Namespace,
-		event.InvolvedObject.Kind,
-		event.InvolvedObject.Name,
-		event.Reason,
-		event.Type,
-		indent(eventFilterString, "    "),
-		indent(string(matchedFieldsBytes), "    "),
+			indent(string(matchedErrorFieldsBytes), "    "),
+		))
+	}
+
+	detailsString := strings.TrimSpace(fmt.Sprintf(`
+Event filter:
+%s
+Matched fields:
+%s
+%s
+
+Event data:
+%s
+`,
+		indent(strings.TrimSpace(eventFilterString), "    "),
+		indent(strings.TrimSpace(string(matchedFieldsBytes)), "    "),
+		matchedErrorFieldsString,
+		indent(strings.TrimSpace(string(eventYAMLBytes)), "    "),
 	))
-	testResult.Error = &errorString
+
+	if len(matchResult.MatchedErrorFields) > 0 {
+		testResult.Error = &event.Message
+	} else {
+		// Prepend the event message to details
+		detailsString = strings.TrimSpace(fmt.Sprintf(`
+%s
+
+%s
+`, event.Message, detailsString))
+	}
+	testResult.Details = &detailsString
 
 	//
 	// Convert the event to a JSON string we can notify.

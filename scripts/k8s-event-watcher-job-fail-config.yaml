@@ -4,3 +4,5 @@ filters:
     involvedObject.kind: Job
     involvedObject.name: "^*.fail"
     reason: BackoffLimitExceeded
+  errorRules:
+    type: .*

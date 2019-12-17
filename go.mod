@@ -3,7 +3,7 @@ module github.com/cmaster11/overseer
 go 1.13
 
 require (
-	github.com/cmaster11/k8s-event-watcher v0.0.7
+	github.com/cmaster11/k8s-event-watcher v0.0.8
 	github.com/emersion/go-imap v1.0.0-beta.2
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
@@ -12,6 +12,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/marpaia/graphite-golang v0.0.0-20171231172105-134b9af18cf3
 	github.com/miekg/dns v1.1.6
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
