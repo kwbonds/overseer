@@ -1,5 +1,18 @@
 # Changelog
 
+## [2019/12/17] cmaster11/overseer:1.12.6
+
+* BREAKING: new version of [k8s-event-watcher](https://github.com/cmaster11/k8s-event-watcher):
+    * Filters configuration now accepts any field name, and a new `rules` keyword has been introduced:
+    ```yaml
+    filters:
+    - rules:
+        involvedObject.kind: Job
+        involvedObject.name: "^*.fail"
+        reason: BackoffLimitExceeded
+    ```
+* You can now use the `connect-retries` flag for HTTP tests, which will have Overseer retry the connection to a server in case of connect timeout.
+
 ## [2019/12/16] cmaster11/overseer:1.12.5
 
 * You can now use a per-test `timeout` flag, which will override the worker one if set.
