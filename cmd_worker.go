@@ -535,6 +535,13 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 		if err != nil {
 
 			//
+			// We failed to resolve the target, so we have to raise
+			// a failure.  But before we do that we need to sanitize
+			// the test.
+			//
+			tst.Input = tst.Sanitize()
+
+			//
 			// Notify the world about our DNS-failure.
 			//
 			p.notify(tst, fmt.Errorf("failed to resolve name %s", testTarget), nil)

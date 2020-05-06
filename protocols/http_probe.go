@@ -92,6 +92,18 @@
 // NOTE: This test deliberately does not follow redirections, to allow
 // enhanced testing.
 //
+// To follow redirects, use the option:
+//
+//    with follow-redirect true <- max 10 follows (default)
+//
+//    with follow-redirect 20 <- max 20 follows
+//
+// When testing against hostnames, which resolve to a multitude of targets,
+// you may want the test to just run against the first found address.
+// You can force the test to use ONLY the first found target with the option:
+//
+//    with no-resolve true
+//
 
 package protocols
 
@@ -101,6 +113,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -130,13 +143,15 @@ func (s *HTTPTest) Arguments() map[string]string {
 		"password":            ".*",
 		"pattern":             ".*",
 		"not-pattern":         ".*",
-		"status":              "^(any|[0-9]+(?:,[0-9]+)*)$",
+		"status":              "^(any|[0-9]{3}(?:,[0-9]{3})*)$",
 		"tls":                 "insecure",
 		"username":            ".*",
 		"connect-timeout":     `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 		"connect-retries":     `^\d+$`,
 		"tls-timeout":         `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 		"resp-header-timeout": `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
+		"no-resolve":          `^true|false$`,
+		"follow-redirect":     `^true|false|(\d+)$`,
 	}
 	return known
 }
@@ -241,6 +256,18 @@ HTTP Tester
 
  Do note that the HTTP-probe never follow redirections, to allow enhanced
  testing.
+
+ To follow redirects, use the option:
+ 
+    with follow-redirect true <- max 10 follows (default)
+
+    with follow-redirect 20 <- max 20 follows
+
+ When testing against hostnames, which resolve to a multitude of targets,
+ you may want the test to just run against the first found address.
+ You can force the test to use ONLY the first found target with the option:
+
+    with no-resolve true
 `
 	return str
 }
@@ -313,53 +340,62 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		maxConnectRetries = int(_maxDialerRetries)
 	}
 
-	//
-	// This is where some magic happens, we want to connect and do
-	// a http check on http://example.com/, but we want to do that
-	// via the IP address.
-	//
-	// We could do that manually by connecting to http://1.2.3.4,
-	// and sending the appropriate HTTP Host: header but that risks
-	// a bit of complexity with SSL in particular.
-	//
-	// So instead we fake the address in the dialer object, so that
-	// we don't rewrite anything, don't do anything manually, and
-	// instead just connect to the right IP by magic.
-	//
-	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		//
-		// Assume an IPv4 address by default.
-		//
-		addr = fmt.Sprintf("%s:%s", address, port)
+	var dial func(ctx context.Context, network, addr string) (net.Conn, error)
 
-		//
-		// If we find a ":" we know it is an IPv6 address though
-		//
-		if strings.Contains(address, ":") {
-			addr = fmt.Sprintf("[%s]:%s", address, port)
-		}
+	resolve := true
+	if tst.Arguments["no-resolve"] == "true" {
+		resolve = false
+	}
 
-		var conn net.Conn
-		var errDial error
-		for retryCount := 0; retryCount <= maxConnectRetries; retryCount++ {
+	if resolve {
+		//
+		// This is where some magic happens, we want to connect and do
+		// a http check on http://example.com/, but we want to do that
+		// via the IP address.
+		//
+		// We could do that manually by connecting to http://1.2.3.4,
+		// and sending the appropriate HTTP Host: header but that risks
+		// a bit of complexity with SSL in particular.
+		//
+		// So instead we fake the address in the dialer object, so that
+		// we don't rewrite anything, don't do anything manually, and
+		// instead just connect to the right IP by magic.
+		//
+		dial = func(ctx context.Context, network, _ string) (net.Conn, error) {
 			//
-			// Use the replaced/updated address in our connection.
+			// Assume an IPv4 address by default.
 			//
-			conn, errDial = dialer.DialContext(ctx, network, addr)
-			// On error, if we experience a connect timeout, give it another chance if there are more retries available
-			if errDial != nil {
-				errNet, ok := errDial.(net.Error)
-				if ok && errNet.Timeout() {
-					continue
+			addr := fmt.Sprintf("%s:%s", address, port)
+
+			//
+			// If we find a ":" we know it is an IPv6 address though
+			//
+			if strings.Contains(address, ":") {
+				addr = fmt.Sprintf("[%s]:%s", address, port)
+			}
+
+			var conn net.Conn
+			var errDial error
+			for retryCount := 0; retryCount <= maxConnectRetries; retryCount++ {
+				//
+				// Use the replaced/updated address in our connection.
+				//
+				conn, errDial = dialer.DialContext(ctx, network, addr)
+				// On error, if we experience a connect timeout, give it another chance if there are more retries available
+				if errDial != nil {
+					errNet, ok := errDial.(net.Error)
+					if ok && errNet.Timeout() {
+						continue
+					}
+
+					// On any other error, no retries
+					break
 				}
-
-				// On any other error, no retries
 				break
 			}
-			break
-		}
 
-		return conn, errDial
+			return conn, errDial
+		}
 	}
 
 	//
@@ -400,17 +436,31 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		timeout = *tst.Timeout
 	}
 
+	maxFollowRedirects := 0
+
+	argFollowRedirect := tst.Arguments["follow-redirect"]
+	if parsed, errParse := strconv.ParseInt(argFollowRedirect, 10, 32); errParse == nil {
+		maxFollowRedirects = int(parsed)
+	} else if argFollowRedirect == "true" {
+		maxFollowRedirects = 10
+	}
+
 	//
 	// Create a client with a timeout, disabled redirection, and
 	// the magical transport we've just created.
 	//
 	var netClient = &http.Client{
-		Timeout: timeout,
-
+		Timeout:   timeout,
+		Transport: tr,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if maxFollowRedirects > 0 {
+				maxFollowRedirects--
+				lastRequest := via[len(via)-1]
+				log.Printf("following redirect from %s to %s", lastRequest.URL.String(), req.URL.String())
+				return nil
+			}
 			return http.ErrUseLastResponse
 		},
-		Transport: tr,
 	}
 
 	//
@@ -486,7 +536,7 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	//
 	// The default status-code we accept as OK
 	//
-	allowedStatuses := []int{http.StatusOK}
+	var allowedStatuses []int
 
 	//
 	// Did the user want to look for a specific status-code?
@@ -502,6 +552,10 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 
 			allowedStatuses = append(allowedStatuses, allowedStatus)
 		}
+
+	} else {
+
+		allowedStatuses = append(allowedStatuses, http.StatusOK)
 
 	}
 
