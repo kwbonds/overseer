@@ -1,12 +1,13 @@
 # Changelog
 
-## [2020/05/06] cmaster11/overseer:1.12.9
+## [2020/05/06] cmaster11/overseer:1.12.10
 
-* HTTP test has new options:
-    * `follow-redirect true|(\d+)`: allows following HTTP redirects:
+* HTTP test has new option:
+    * `follow-redirect true|(\d+)`: allows following HTTP redirects.
         * `follow-redirect true`: allows max 10 redirects
         * `follow-redirect 25`: allows max 25 (or any other used number) redirects
-    * `no-resolve true`: forces the HTTP test to run against only the first found target of the hostname, instead of all of them.
+* All tests which resolve hostnames have a new option:
+    * `max-targets 2`: forces the test to run against only the first 2 (or any other number) found targets of the hostname, instead of all of them.
 
 ## [2019/12/17] cmaster11/overseer:1.12.8
 

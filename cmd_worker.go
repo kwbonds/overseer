@@ -585,6 +585,10 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 		targets = append(targets, testTarget)
 	}
 
+	if tst.MaxTargetsCount > 0 && len(targets) > tst.MaxTargetsCount {
+		targets = targets[:tst.MaxTargetsCount]
+	}
+
 	testEndFn := func(startTime time.Time, target string, attempts uint, result error, details *string) {
 		//
 		// Now the test is complete we can record the time it

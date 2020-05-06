@@ -98,12 +98,6 @@
 //
 //    with follow-redirect 20 <- max 20 follows
 //
-// When testing against hostnames, which resolve to a multitude of targets,
-// you may want the test to just run against the first found address.
-// You can force the test to use ONLY the first found target with the option:
-//
-//    with no-resolve true
-//
 
 package protocols
 
@@ -150,7 +144,6 @@ func (s *HTTPTest) Arguments() map[string]string {
 		"connect-retries":     `^\d+$`,
 		"tls-timeout":         `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
 		"resp-header-timeout": `^[+]?([0-9]*(\.[0-9]*)?[a-z]+)+$`,
-		"no-resolve":          `^true|false$`,
 		"follow-redirect":     `^true|false|(\d+)$`,
 	}
 	return known
@@ -262,12 +255,6 @@ HTTP Tester
     with follow-redirect true <- max 10 follows (default)
 
     with follow-redirect 20 <- max 20 follows
-
- When testing against hostnames, which resolve to a multitude of targets,
- you may want the test to just run against the first found address.
- You can force the test to use ONLY the first found target with the option:
-
-    with no-resolve true
 `
 	return str
 }
@@ -340,62 +327,53 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 		maxConnectRetries = int(_maxDialerRetries)
 	}
 
-	var dial func(ctx context.Context, network, addr string) (net.Conn, error)
-
-	resolve := true
-	if tst.Arguments["no-resolve"] == "true" {
-		resolve = false
-	}
-
-	if resolve {
+	//
+	// This is where some magic happens, we want to connect and do
+	// a http check on http://example.com/, but we want to do that
+	// via the IP address.
+	//
+	// We could do that manually by connecting to http://1.2.3.4,
+	// and sending the appropriate HTTP Host: header but that risks
+	// a bit of complexity with SSL in particular.
+	//
+	// So instead we fake the address in the dialer object, so that
+	// we don't rewrite anything, don't do anything manually, and
+	// instead just connect to the right IP by magic.
+	//
+	dial := func(ctx context.Context, network, _ string) (net.Conn, error) {
 		//
-		// This is where some magic happens, we want to connect and do
-		// a http check on http://example.com/, but we want to do that
-		// via the IP address.
+		// Assume an IPv4 address by default.
 		//
-		// We could do that manually by connecting to http://1.2.3.4,
-		// and sending the appropriate HTTP Host: header but that risks
-		// a bit of complexity with SSL in particular.
+		addr := fmt.Sprintf("%s:%s", address, port)
+
 		//
-		// So instead we fake the address in the dialer object, so that
-		// we don't rewrite anything, don't do anything manually, and
-		// instead just connect to the right IP by magic.
+		// If we find a ":" we know it is an IPv6 address though
 		//
-		dial = func(ctx context.Context, network, _ string) (net.Conn, error) {
-			//
-			// Assume an IPv4 address by default.
-			//
-			addr := fmt.Sprintf("%s:%s", address, port)
+		if strings.Contains(address, ":") {
+			addr = fmt.Sprintf("[%s]:%s", address, port)
+		}
 
+		var conn net.Conn
+		var errDial error
+		for retryCount := 0; retryCount <= maxConnectRetries; retryCount++ {
 			//
-			// If we find a ":" we know it is an IPv6 address though
+			// Use the replaced/updated address in our connection.
 			//
-			if strings.Contains(address, ":") {
-				addr = fmt.Sprintf("[%s]:%s", address, port)
-			}
-
-			var conn net.Conn
-			var errDial error
-			for retryCount := 0; retryCount <= maxConnectRetries; retryCount++ {
-				//
-				// Use the replaced/updated address in our connection.
-				//
-				conn, errDial = dialer.DialContext(ctx, network, addr)
-				// On error, if we experience a connect timeout, give it another chance if there are more retries available
-				if errDial != nil {
-					errNet, ok := errDial.(net.Error)
-					if ok && errNet.Timeout() {
-						continue
-					}
-
-					// On any other error, no retries
-					break
+			conn, errDial = dialer.DialContext(ctx, network, addr)
+			// On error, if we experience a connect timeout, give it another chance if there are more retries available
+			if errDial != nil {
+				errNet, ok := errDial.(net.Error)
+				if ok && errNet.Timeout() {
+					continue
 				}
+
+				// On any other error, no retries
 				break
 			}
-
-			return conn, errDial
+			break
 		}
+
+		return conn, errDial
 	}
 
 	//
