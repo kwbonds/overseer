@@ -14,6 +14,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -586,6 +587,8 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 	}
 
 	if tst.MaxTargetsCount > 0 && len(targets) > tst.MaxTargetsCount {
+		// By sorting we have a higher chance of targeting the same target
+		sort.Strings(targets)
 		targets = targets[:tst.MaxTargetsCount]
 	}
 
