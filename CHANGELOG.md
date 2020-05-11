@@ -1,5 +1,10 @@
 # Changelog
 
+## [2020/05/11] cmaster11/overseer:1.12.11
+
+* Sort targets alphabetically when using `max-targets`, which increases the chance of pointing to the same target
+    on subsequent runs.
+
 ## [2020/05/06] cmaster11/overseer:1.12.10
 
 * HTTP test has new option:
