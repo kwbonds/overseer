@@ -305,6 +305,10 @@ func (s *HTTPTest) RunTest(tst test.Test, target string, opts test.Options) erro
 	address := target
 	target = tst.Target
 
+	// If we're running a period test, check if we can replace any related vars
+	target = strings.Replace(target, "__pt-index__", strconv.Itoa(opts.PeriodTestIndex), -1)
+	target = strings.Replace(target, "__pt-time-ms__", strconv.FormatInt(opts.PeriodTestStartTime, 10), -1)
+
 	//
 	// Setup a dialer which will be dual-stack
 	//

@@ -669,7 +669,13 @@ func (p *workerCmd) runTest(workerIdx uint, tst test.Test, opts test.Options) er
 				for time.Now().Before(timeEnd) {
 					iteration++
 					iterationStartTime := time.Now()
-					err := tmp.RunTest(tst, target, opts)
+
+					// Copy opts
+					currentOpts := opts
+					currentOpts.PeriodTestIndex = iteration
+					currentOpts.PeriodTestStartTime = iterationStartTime.UnixNano() / int64(time.Millisecond)
+					err := tmp.RunTest(tst, target, currentOpts)
+
 					iterationDuration := time.Since(iterationStartTime)
 					iterationElapsedString := fmt.Sprintf("%.2fms", float64(iterationDuration)/float64(time.Millisecond))
 					if err != nil {

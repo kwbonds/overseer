@@ -112,4 +112,8 @@ type Options struct {
 
 	// Should the protocol-tests run verbosely?
 	Verbose bool
+
+	// If this is a period test, we may want to replace vars in the target address
+	PeriodTestIndex     int
+	PeriodTestStartTime int64
 }
