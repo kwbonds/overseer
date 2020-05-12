@@ -1,5 +1,14 @@
 # Changelog
 
+## [2020/05/11] cmaster11/overseer:1.12.12
+
+* Overseer now supports two new runtime period-test variables for HTTP test:
+
+    * `__pt-index__`: current period test index
+    * `__pt-time-ms__`: current period test start time
+    
+    Example: `https://google.com?testIdx=__pt-index__ must run http with connect-timeout 2.5s with connect-retries 2 with pt-duration 1m with pt-sleep 1s with pt-threshold 0%`
+
 ## [2020/05/11] cmaster11/overseer:1.12.11
 
 * Sort targets alphabetically when using `max-targets`, which increases the chance of pointing to the same target
