@@ -1,6 +1,6 @@
 # Changelog
 
-## [2020/05/30] cmaster11/overseer:1.13.1
+## [2020/05/30] cmaster11/overseer:1.13.2
 
 * Overseer now supports some new test options:
     * `min-duration`: when defined, an alert will NOT be triggered until the test error is repeated for AT LEAST `min-duration` time.
