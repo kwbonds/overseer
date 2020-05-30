@@ -1,6 +1,6 @@
 # Changelog
 
-## [2020/05/30] WIP
+## [2020/05/30] cmaster11/overseer:1.13.0
 
 * Overseer now supports some new test options:
     * `min-duration`: when defined, an alert will NOT be triggered until the test error is repeated for AT LEAST `min-duration` time.
@@ -10,7 +10,7 @@
     * `test-label`: when defined, offers more flexibility to test result messages, where the field `testLabel` is now passed as it is. 
         This option is useful to have "clean" test result messages, where the test label can be shown instead of the original test input.
     
-        Example: `https://google.com must run http with test-label "Google test"` 
+        Example: `https://google.com must run http with test-label "Google test"`
 
 ## [2020/05/11] cmaster11/overseer:1.12.12
 
