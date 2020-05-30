@@ -1,5 +1,17 @@
 # Changelog
 
+## [2020/05/30] WIP
+
+* Overseer now supports some new test options:
+    * `min-duration`: when defined, an alert will NOT be triggered until the test error is repeated for AT LEAST `min-duration` time.
+        
+        Example: `https://google.com must run http with min-duration 1m` will not generate alerts until the same test fails for more than a minute.
+        
+    * `test-label`: when defined, offers more flexibility to test result messages, where the field `testLabel` is now passed as it is. 
+        This option is useful to have "clean" test result messages, where the test label can be shown instead of the original test input.
+    
+        Example: `https://google.com must run http with test-label "Google test"` 
+
 ## [2020/05/11] cmaster11/overseer:1.12.12
 
 * Overseer now supports two new runtime period-test variables for HTTP test:

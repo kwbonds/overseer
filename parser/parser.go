@@ -365,6 +365,38 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 			delete(result.Arguments, arg)
 			continue
 
+			// Do not trigger same errors unless they have been happening for this defined minimum duration
+		case "min-duration":
+			duration, err := time.ParseDuration(val)
+			if err != nil {
+				return result, fmt.Errorf("non-duration argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			}
+
+			if duration < 0 {
+				return result, fmt.Errorf("duration argument '%s' for test-type '%s' in input '%s' must be > 0", arg, testType, input)
+			}
+
+			result.MinDuration = &duration
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+
+			// Expire min-duration cache by this lifetime factor
+		case "min-duration-cache-factor":
+			factor64, err := strconv.ParseUint(val, 10, 32)
+			if err != nil {
+				return result, fmt.Errorf("non-uint argument '%s' for test-type '%s' in input '%s'", arg, testType, input)
+			}
+
+			factor := uint(factor64)
+
+			result.MinDurationCacheFactor = factor
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+
 			// Override worker-default timeout
 		case "timeout":
 			duration, err := time.ParseDuration(val)
@@ -428,6 +460,12 @@ func (s *Parser) ParseLine(input string, cb ParsedTest) (test.Test, error) {
 			}
 
 			result.MaxTargetsCount = int(maxTargets)
+
+			// We don't want to pass a non-test var to the actual test
+			delete(result.Arguments, arg)
+			continue
+		case "test-label":
+			result.TestLabel = &val
 
 			// We don't want to pass a non-test var to the actual test
 			delete(result.Arguments, arg)
