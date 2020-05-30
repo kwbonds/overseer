@@ -32,10 +32,10 @@ type Result struct {
 	Recovered bool `json:"recovered"`
 
 	// It not nil, will be used as hash for this test
-	UniqueHash *string
+	UniqueHash *string `json:"uniqueHash"`
 
 	// If not nil, describes result with a custom label
-	TestLabel *string
+	TestLabel *string `json:"testLabel"`
 }
 
 // Hash generates a unique identifier for the original test (e.g. to deduplicate same results)
