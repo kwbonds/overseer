@@ -11,6 +11,9 @@ dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2
 dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2s with min-duration 3s with retries 0 with fail-at 0 with test-label "Should alert (3s have passed)"
 dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2s with min-duration 3s with retries 0 with fail-at 98 with test-label "Should recover"
 dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2s with min-duration 3s with retries 0 with fail-at 0 with test-label "No alert"
+dumb-test1 must run dumb-test with dumb-duration-min 5s with dumb-duration-max 5s with min-duration 3s with retries 0 with fail-at 99 with test-label "No recover message (alert not shown)"
+dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2s with min-duration 3s with retries 0 with fail-at 99 with test-label "No recover message"
+dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2s with min-duration 3s with retries 0 with fail-at 99 with test-label "No recover message"
 dumb-test1 must run dumb-test with dumb-duration-min 2s with dumb-duration-max 2s with min-duration 3s with retries 0 with fail-at 99 with test-label "No recover message"
 EOL
 

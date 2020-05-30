@@ -298,29 +298,33 @@ func (p *workerCmd) notify(testDefinition test.Test, uniqueHash *string, resultE
 		firstErrorTime := p.getMinDurationFirstErrorTime(hash)
 		testResult.FirstErrorTime = firstErrorTime
 
+		expireDuration := *testDefinition.MinDuration * time.Duration(testDefinition.MinDurationCacheFactor)
+
 		if testResult.Error != nil {
 
 			// With minDuration, we don't want to trigger the notification, unless the test has failed for a long enough amount of time
 			if firstErrorTime != nil {
 				diffFirstError := now.Unix() - *firstErrorTime
 
-				// We want to keep the ORIGINAL error time as first error, just extend the expiry time
-				p.setMinDurationFirstErrorTime(hash, *firstErrorTime, *testDefinition.MinDuration*time.Duration(testDefinition.MinDurationCacheFactor))
+				// We want to keep the ORIGINAL error time as alert shown, just extend the expiry time
+				p.setMinDurationFirstErrorTime(hash, *firstErrorTime, expireDuration)
 
 				if diffFirstError < minDurationSeconds {
 					// There is no need to trigger the notification, because not enough time has passed since the error got fired
-					p.verbose(fmt.Sprintf("Skipping notification (minDuration, first error %s ago) for test `%s` (%s)\n",
+					p.verbose(fmt.Sprintf("Skipping notification (minDuration, alert shown %s ago) for test `%s` (%s)\n",
 						time.Duration(diffFirstError)*time.Second,
 						testDefinition.Input, testDefinition.Target))
 					return nil
 				}
 
 				// Let's show the alert!
+				// Mark it as shown
+				p.setMinDurationAlertShown(hash, true, expireDuration)
 
 			} else {
-				p.setMinDurationFirstErrorTime(hash, now.Unix(), *testDefinition.MinDuration*time.Duration(testDefinition.MinDurationCacheFactor))
+				p.setMinDurationFirstErrorTime(hash, now.Unix(), expireDuration)
 
-				// Do not throw alert here, as it is the first error
+				// Do not throw alert here, because this is the first generated alert
 				return nil
 			}
 
@@ -330,19 +334,31 @@ func (p *workerCmd) notify(testDefinition test.Test, uniqueHash *string, resultE
 			if firstErrorTime != nil {
 				diffFirstError := now.Unix() - *firstErrorTime
 
+				alertShown := p.getMinDurationAlertShown(hash)
+
 				// Clear the cache because test got resolved
 				p.clearMinDurationFirstErrorTime(hash)
+				p.clearMinDurationAlertShown(hash)
 				testResult.Recovered = true
 
 				// If the error has never been triggered, because min duration did not expire, do not trigger a recovered message
 				if diffFirstError < minDurationSeconds {
-					p.verbose(fmt.Sprintf("Test recovered (min duration cache cleared, skipping recovered message): `%s` (%s)\n",
+					p.verbose(fmt.Sprintf("Test recovered (min duration not met, skipping recovered message): `%s` (%s)\n",
 						testDefinition.Input, testDefinition.Target))
 					return nil
 				}
 
-				p.verbose(fmt.Sprintf("Test recovered (min duration cache cleared): `%s` (%s)\n",
+				// Check if we want to show the recovered message
+				if !alertShown {
+					p.verbose(fmt.Sprintf("Test recovered (alert not shown, skipping recovered message): `%s` (%s)\n",
+						testDefinition.Input, testDefinition.Target))
+
+					return nil
+				}
+
+				p.verbose(fmt.Sprintf("Test recovered (min duration cache cleared, showing recovered message): `%s` (%s)\n",
 					testDefinition.Input, testDefinition.Target))
+
 			} else {
 
 				/*
@@ -544,7 +560,7 @@ func (p *workerCmd) getMinDurationFirstErrorTime(hash string) *int64 {
 			return nil
 		}
 
-		fmt.Printf("Failed to get min-duration first error key: %s\n", err)
+		fmt.Printf("Failed to get min-duration alert shown key: %s\n", err)
 		return nil
 	}
 
@@ -559,7 +575,7 @@ func (p *workerCmd) setMinDurationFirstErrorTime(hash string, errorTime int64, e
 	cacheKey := p.getMinDurationFirstErrorKey(hash)
 	_, err := p._r.Set(cacheKey, errorTime, expiry).Result()
 	if err != nil {
-		fmt.Printf("Failed to set min-duration first error key: %s\n", err)
+		fmt.Printf("Failed to set min-duration alert shown key: %s\n", err)
 	}
 }
 
@@ -571,7 +587,60 @@ func (p *workerCmd) clearMinDurationFirstErrorTime(hash string) {
 	cacheKey := p.getMinDurationFirstErrorKey(hash)
 	_, err := p._r.Del(cacheKey).Result()
 	if err != nil {
-		fmt.Printf("Failed to clear min-duration first error key: %s\n", err)
+		fmt.Printf("Failed to clear min-duration alert shown key: %s\n", err)
+	}
+}
+
+func (p *workerCmd) getMinDurationAlertShownKey(hash string) string {
+	return fmt.Sprintf("overseer.min-duration-alert-shown.%s", hash)
+}
+
+func (p *workerCmd) getMinDurationAlertShown(hash string) bool {
+	if p._r == nil {
+		return false
+	}
+
+	cacheKey := p.getMinDurationAlertShownKey(hash)
+	alertShown, err := p._r.Get(cacheKey).Int64()
+	if err != nil {
+		if err == redis.Nil {
+			// Key just does not exist
+			return false
+		}
+
+		fmt.Printf("Failed to get min-duration alert shown key: %s\n", err)
+		return false
+	}
+
+	return alertShown > 0
+}
+
+func (p *workerCmd) setMinDurationAlertShown(hash string, shown bool, expiry time.Duration) {
+	if p._r == nil {
+		return
+	}
+
+	alertShown := 0
+	if shown {
+		alertShown = 1
+	}
+
+	cacheKey := p.getMinDurationAlertShownKey(hash)
+	_, err := p._r.Set(cacheKey, alertShown, expiry).Result()
+	if err != nil {
+		fmt.Printf("Failed to set min-duration alert shown key: %s\n", err)
+	}
+}
+
+func (p *workerCmd) clearMinDurationAlertShown(hash string) {
+	if p._r == nil {
+		return
+	}
+
+	cacheKey := p.getMinDurationAlertShownKey(hash)
+	_, err := p._r.Del(cacheKey).Result()
+	if err != nil {
+		fmt.Printf("Failed to clear min-duration alert shown key: %s\n", err)
 	}
 }
 
