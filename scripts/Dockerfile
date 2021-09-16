@@ -1,4 +1,4 @@
-FROM golang:1.13.1-alpine3.10 as builder
+FROM golang:1.16-alpine3.14 as builder
 
 # Install git
 # Git is required for fetching the dependencies.
@@ -14,7 +14,7 @@ RUN go build -ldflags "-X main.version=$(git describe --tags 2>/dev/null || echo
 ############################
 # STEP 2 build a small image
 ############################
-FROM alpine:3.9
+FROM alpine:3.14
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
