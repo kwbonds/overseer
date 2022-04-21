@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overseer-k8s-event-watcher
+  namespace: overseer
+  labels:
+    app: overseer-k8s-event-watcher
+spec:
+  selector:
+    matchLabels:
+      app: overseer-k8s-event-watcher
+  # Must be only one to not generate duplicates
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: overseer-k8s-event-watcher
+    spec:
+      serviceAccount: overseer-k8s-event-watcher
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - overseer-k8s-event-watcher
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: overseer-k8s-event-watcher
+          image: cmaster11/overseer:release-1.11-4
+          args:
+            - k8s-event-watcher
+            - -redis-host
+            - redis:6379
+            - -verbose
+            # A tag to identify the current overseer workers.
+            # Useful when dealing with multiple overseer workers in multiple Kubernetes clusters.
+            - -tag
+            - my-k8s-cluster
+            # The actual config of the event watcher
+            - -watcher-config
+            - /opt/overseer/config/event-watcher-config.yaml
+          volumeMounts:
+            - name: overseer-k8s-event-watcher-config
+              mountPath: /opt/overseer/config
+      volumes:
+        - name: overseer-k8s-event-watcher-config
+          configMap:
+            name: overseer-k8s-event-watcher-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: overseer-k8s-event-watcher-config
+  namespace: overseer
+data:
+  event-watcher-config.yaml: |
+    # Do we want to only trigger alerts for future events?
+    sinceNow: true
+    # Do we want to find failed jobs/cron jobs?
+    filters:
+      - objectKind: Job
+        eventReason: BackoffLimitExceeded
+        # Watch only for specific namespace
+        objectNamespace: analytics
